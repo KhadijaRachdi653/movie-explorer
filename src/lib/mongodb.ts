@@ -1,53 +1,45 @@
-import mongoose from 'mongoose';
+
+import mongoose, { type Mongoose } from "mongoose";
+
+declare global {
+  // Reuse the connection while Next.js reloads modules in development.
+  var mongoose: {
+    conn: Mongoose | null;
+    promise: Promise<Mongoose> | null;
+  } | undefined;
+}
 
 const MONGODB_URI = process.env.MONGODB_URI;
 
 if (!MONGODB_URI) {
-  throw new Error(
-    'Veuillez définir la variable MONGODB_URI dans votre fichier .env.local'
-  );
+  throw new Error("Please define MONGODB_URI in .env.local");
 }
 
-// Extension globale de l'objet global de Node.js pour stocker la connexion en cache
-interface GlobalMongoose {
-  conn: typeof mongoose | null;
-  promise: Promise<typeof mongoose> | null;
-}
+const cached =
+  globalThis.mongoose ??
+  (globalThis.mongoose = {
+    conn: null,
+    promise: null,
+  });
 
-declare global {
-  // eslint-disable-next-line no-var
-  var mongoose: GlobalMongoose | undefined;
-}
-
-let cached = global.mongoose;
-
-if (!cached) {
-  cached = global.mongoose = { conn: null, promise: null };
-}
-
-async function dbConnect() {
-  if (cached!.conn) {
-    return cached!.conn;
+export async function connectToDatabase(): Promise<Mongoose> {
+  if (cached.conn) {
+    return cached.conn;
   }
 
-  if (!cached!.promise) {
-    const opts = {
-      bufferCommands: false,
-    };
-
-    cached!.promise = mongoose.connect(MONGODB_URI!, opts).then((mongooseInstance) => {
-      return mongooseInstance;
-    });
+  if (!cached.promise) {
+    cached.promise = mongoose.connect(MONGODB_URI).then(
+      (instance) => instance
+    );
   }
 
   try {
-    cached!.conn = await cached!.promise;
-  } catch (e) {
-    cached!.promise = null;
-    throw e;
+    cached.conn = await cached.promise;
+  } catch (error) {
+    cached.promise = null;
+    throw error;
   }
 
-  return cached!.conn;
+  return cached.conn;
 }
 
-export default dbConnect;

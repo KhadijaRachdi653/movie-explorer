@@ -35,10 +35,18 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   const { request } = event;
 
+  // À remplacer dans l'événement "fetch" :
   if (request.method !== "GET") return;
 
-  // Ignorer les requêtes de rechargement à chaud (Hot Module Replacement) de Next.js
-  if (request.url.includes("_next/webpack") || request.url.includes("hot-update")) {
+  // 💡 AJOUT : Ignorer le HMR de Turbopack, Webpack, l'API Auth et les WebSockets de dev
+  if (
+    request.url.includes("_next/webpack") ||
+    request.url.includes("hot-update") ||
+    request.url.includes("_next/hmr") ||
+    request.url.includes("/api/auth") || // Évite de mettre en cache les sessions d'authentification
+    request.url.startsWith("ws:") ||
+    request.url.startsWith("wss:")
+  ) {
     return;
   }
 

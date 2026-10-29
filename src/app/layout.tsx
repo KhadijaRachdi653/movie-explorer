@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import RegisterSW from "@/components/pwa/RegisterSW";
+import { UserProvider } from "@/context/UserContext";
 
 export const metadata: Metadata = {
   title: {
@@ -8,7 +9,7 @@ export const metadata: Metadata = {
     template: "%s | Movie Explorer",
   },
   description:
-    "Application PWA pour découvrir, rechercher et organiser vos films préférés.",
+    "Application pour découvrir, rechercher et organiser vos films préférés.",
   applicationName: "Movie Explorer",
   appleWebApp: {
     capable: true,
@@ -27,15 +28,16 @@ export const viewport: Viewport = {
   themeColor: "#0d6efd",
 };
 
-// ⚠️ Assurez-vous d'avoir bien la mention "export default" ici :
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="fr">
       <body className="min-h-screen bg-slate-950 text-slate-100">
-        <RegisterSW />
-        {children}
+        <UserProvider>
+          <RegisterSW />
+          {children}
+        </UserProvider>
       </body>
     </html>
   );

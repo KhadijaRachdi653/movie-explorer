@@ -1,68 +1,73 @@
-import Image from "next/image";
+import { auth, signOut } from "@/lib/auth";
+import Link from "next/link";
 
-export default function Home() {
+export default async function HomePage() {
+  const session = await auth();
+
+  const handleSignOut = async () => {
+    "use server";
+    await signOut({ redirectTo: "/" });
+  };
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
+    <div className="min-h-screen bg-slate-950 text-white">
+      <header className="border-b border-slate-800 p-4 flex justify-between items-center bg-slate-900/50 backdrop-blur">
+        <div className="flex items-center gap-2 font-bold text-xl text-blue-500">
+          🎬 Movie Explorer
+        </div>
+
+        <nav className="flex gap-4 items-center">
+          {session ? (
+            <>
+              <span className="text-sm text-slate-400">
+                Bonjour, <strong className="text-white">{session.user?.name}</strong> !
+              </span>
+
+              <Link href="/profile" className="text-sm text-slate-200 hover:text-white underline">
+                Mon Profil
+              </Link>
+
+              <form action={handleSignOut} className="inline">
+                <button
+                  type="submit"
+                  className="text-sm bg-red-600/80 hover:bg-red-700 text-white px-3 py-1.5 rounded-md transition-colors"
+                >
+                  Déconnexion
+                </button>
+              </form>
+            </>
+          ) : (
+            <>
+              <Link href="/login" className="text-sm hover:underline">
+                Se connecter
+              </Link>
+              <Link href="/register" className="text-sm bg-blue-600 hover:bg-blue-700 px-3 py-1.5 rounded-md transition-colors">
+                Créer un compte
+              </Link>
+            </>
+          )}
+        </nav>
+      </header>
+
+      <main className="max-w-7xl mx-auto p-6 space-y-8">
+        {session && (
+          <div className="p-4 bg-blue-950/40 border border-blue-800/50 text-blue-200 rounded-lg text-sm">
+            Ravi de vous revoir, <strong>{session.user?.name}</strong> ! Vous pouvez maintenant gérer vos listes de films favoris depuis votre espace.
+          </div>
+        )}
+
+        <section className="text-center py-12 space-y-4">
+          <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">
+            Explorez des milliers de films
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="text-slate-400 max-w-xl mx-auto">
+            Trouvez les dernières sorties, organisez vos favoris et consultez les avis de la communauté.
           </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+
+          <div className="mt-8 p-12 border-2 border-dashed border-slate-800 rounded-xl text-slate-500">
+            [ Emplacement du catalogue de films  ]
+          </div>
+        </section>
       </main>
     </div>
   );

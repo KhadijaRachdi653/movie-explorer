@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import RegisterSW from "@/components/pwa/RegisterSW";
 import { UserProvider } from "@/context/UserContext";
+import ChatBotLoader from "@/components/chat/ChatBotLoader";
 
 export const metadata: Metadata = {
   title: {
@@ -37,6 +38,7 @@ export default function RootLayout({
         <UserProvider>
           <RegisterSW />
           {children}
+          <ChatBotLoader />
         </UserProvider>
       </body>
     </html>

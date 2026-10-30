@@ -28,6 +28,7 @@ export const addMovieSchema = z.object({
 export const movieIdParamSchema = z.coerce.number().int().positive("movieId invalide.");
 
 export const recommendationsQuerySchema = z.object({
+  listId: z.preprocess((v) => (v === "" || v == null ? undefined : v), z.string().refine((v) => isValidObjectId(v), "Identifiant de liste invalide.").optional()),
   movieId: z.preprocess((v) => (v === "" || v == null ? undefined : v), z.coerce.number().int().positive("movieId invalide.").optional()),
   limit: z.preprocess((v) => (v === "" || v == null ? undefined : v), z.coerce.number().int().min(1, "limit entre 1 et 40.").max(40, "limit entre 1 et 40.").default(20)),
 });

@@ -39,6 +39,6 @@ export interface RecommendedMovie {
 }
 
 export interface RecommendationsResponse {
-  source: "personal" | "similar" | "trending";
+  source: "personal" | "list" | "similar" | "trending";
   results: RecommendedMovie[];
 }

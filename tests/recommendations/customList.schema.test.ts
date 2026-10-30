@@ -38,3 +38,24 @@ describe("paramètres d'URL", () => {
     expect(recommendationsQuerySchema.safeParse({ limit: "41" }).success).toBe(false);
   });
 });
+
+describe("recommendationsQuerySchema — listId", () => {
+  it("accepte un identifiant de liste valide", () => {
+    expect(recommendationsQuerySchema.parse({ listId: "6ae3d0c8e9a17dc42f5b4362" }).listId).toBe("6ae3d0c8e9a17dc42f5b4362");
+  });
+  it("refuse un identifiant de liste invalide", () => {
+    expect(recommendationsQuerySchema.safeParse({ listId: "1400940" }).success).toBe(false);
+  });
+  it("listId vide = absent", () => {
+    expect(recommendationsQuerySchema.parse({ listId: "" }).listId).toBeUndefined();
+  });
+});
+
+describe("recommandations par liste", () => {
+  it("accepte un listId MongoDB valide", () => {
+    expect(recommendationsQuerySchema.parse({ listId: "6ae482289836dfa17311ac4f" }).listId).toBe("6ae482289836dfa17311ac4f");
+  });
+  it("refuse un listId invalide (ex. un ID TMDB)", () => {
+    expect(recommendationsQuerySchema.safeParse({ listId: "1400940" }).success).toBe(false);
+  });
+});

@@ -1,6 +1,7 @@
 import dbConnect from "@/lib/mongodb";
 import { tmdbFetch, type TmdbMovie, type TmdbPage } from "@/lib/tmdb";
 import CustomList, { type CustomListDoc } from "./customList.model";
+import { getList } from "./customList.service";
 import { buildSignals, rankCandidates, toRecommendedMovie, type CandidateGroup, type SignalMovie } from "./ranking";
 import type { RecommendationsResponse } from "./types";
 
@@ -37,11 +38,21 @@ export async function getSimilarMovies(movieId: number, limit: number): Promise<
   return { source: "similar", results: data.results.slice(0, limit).map((m) => toRecommendedMovie(m, null)) };
 }
 
-/** Recommandations personnalisées ; tendances si aucun signal (ou utilisateur non connecté). */
-export async function getPersonalRecommendations(userId: string | null, limit: number): Promise<RecommendationsResponse> {
-  if (!userId) return trending(limit);
+/**
+ * Recommandations personnalisées ; tendances si aucun signal (ou utilisateur non connecté).
+ * Avec listId : seuls les films de cette liste servent de signaux (droits de lecture vérifiés : 403/404).
+ */
+export async function getPersonalRecommendations(userId: string | null, limit: number, listId?: string): Promise<RecommendationsResponse> {
+  let signalMovies: SignalMovie[];
+  if (listId) {
+    const list = await getList(listId, userId);
+    signalMovies = list.movies;
+  } else {
+    if (!userId) return trending(limit);
+    signalMovies = await getUserSignalMovies(userId);
+  }
 
-  const signals = buildSignals(await getUserSignalMovies(userId));
+  const signals = buildSignals(signalMovies);
   if (signals.seeds.length === 0) return trending(limit);
 
   const groups: CandidateGroup[] = await Promise.all(
@@ -56,5 +67,5 @@ export async function getPersonalRecommendations(userId: string | null, limit: n
   }
 
   const results = rankCandidates(groups, signals, limit);
-  return results.length > 0 ? { source: "personal", results } : trending(limit);
+  return results.length > 0 ? { source: listId ? "list" : "personal", results } : trending(limit);
 }

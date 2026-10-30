@@ -44,10 +44,13 @@ export default function Module6Demo() {
     if (r.ok) setLists((r.data as { lists: CustomListDTO[] }).lists);
   }, [api]);
 
+  // Liste choisie (la première si la sélection n'existe plus) : sert aux recommandations ET à l'ajout
+  const targetId = lists.some((l) => l.id === targetListId) ? targetListId : (lists[0]?.id ?? "");
+
   const loadRecos = useCallback(async () => {
-    const r = await api("/api/recommendations?limit=8");
+    const r = await api(`/api/recommendations?limit=8${targetId ? `&listId=${targetId}` : ""}`);
     if (r.ok) setRecos(r.data as RecommendationsResponse);
-  }, [api]);
+  }, [api, targetId]);
 
   useEffect(() => {
     // Chargement initial des données (setState après un fetch asynchrone : cas légitime)
@@ -56,8 +59,6 @@ export default function Module6Demo() {
     void loadRecos();
   }, [loadLists, loadRecos]);
 
-  // Liste cible valide (la première si la sélection n'existe plus)
-  const targetId = lists.some((l) => l.id === targetListId) ? targetListId : (lists[0]?.id ?? "");
 
   async function refreshAll() {
     await loadLists();
@@ -145,8 +146,8 @@ export default function Module6Demo() {
               </h2>
               <div className="flex flex-wrap items-center gap-2">
                 {lists.length > 0 && (
-                  <select className={`${input} w-auto`} value={targetId} onChange={(e) => setTargetListId(e.target.value)} aria-label="Liste où ajouter">
-                    {lists.map((l) => <option key={l.id} value={l.id}>Ajouter dans : {l.name}</option>)}
+                  <select className={`${input} w-auto`} value={targetId} onChange={(e) => setTargetListId(e.target.value)} aria-label="Liste utilisée pour les recommandations et l’ajout">
+                    {lists.map((l) => <option key={l.id} value={l.id}>Liste : {l.name}</option>)}
                   </select>
                 )}
                 <button className={btnGhost} onClick={() => void loadRecos()}>Actualiser</button>

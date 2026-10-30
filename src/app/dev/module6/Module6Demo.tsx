@@ -45,7 +45,9 @@ export default function Module6Demo() {
   }, [api]);
 
   // Liste choisie (la première si la sélection n'existe plus) : sert aux recommandations ET à l'ajout
-  const targetId = lists.some((l) => l.id === targetListId) ? targetListId : (lists[0]?.id ?? "");
+  // "all" = toutes les listes : recommandations globales (source "personal"), ajout désactivé
+  const targetId =
+    targetListId === "all" ? "" : lists.some((l) => l.id === targetListId) ? targetListId : (lists[0]?.id ?? "");
 
   const loadRecos = useCallback(async () => {
     const r = await api(`/api/recommendations?limit=8${targetId ? `&listId=${targetId}` : ""}`);
@@ -146,8 +148,9 @@ export default function Module6Demo() {
               </h2>
               <div className="flex flex-wrap items-center gap-2">
                 {lists.length > 0 && (
-                  <select className={`${input} w-auto`} value={targetId} onChange={(e) => setTargetListId(e.target.value)} aria-label="Liste utilisée pour les recommandations et l’ajout">
+                  <select className={`${input} w-auto`} value={targetListId === "all" ? "all" : targetId} onChange={(e) => setTargetListId(e.target.value)} aria-label="Liste utilisée pour les recommandations et l’ajout">
                     {lists.map((l) => <option key={l.id} value={l.id}>Liste : {l.name}</option>)}
+                    <option value="all">Toutes mes listes</option>
                   </select>
                 )}
                 <button className={btnGhost} onClick={() => void loadRecos()}>Actualiser</button>
@@ -166,8 +169,8 @@ export default function Module6Demo() {
                     <p className="text-sm font-semibold leading-tight">{m.title}</p>
                     <p className="text-xs text-slate-400">★ {m.rating.toFixed(1)} · TMDB {m.movieId}</p>
                     {m.reason && <p className="text-xs text-blue-300">{m.reason}</p>}
-                    <button className={`${btnGhost} mt-auto text-xs`} disabled={!targetId} onClick={() => void addRecoToList(m)}>
-                      Ajouter à la liste
+                    <button className={`${btnGhost} mt-auto text-xs`} disabled={!targetId} title={targetId ? undefined : "Choisissez une liste pour ajouter ce film"} onClick={() => void addRecoToList(m)}>
+                      {targetId ? "Ajouter à la liste" : "Choisir une liste"}
                     </button>
                   </div>
                 </li>

@@ -106,3 +106,13 @@ await api("/api/saved-searches");
 ```
 3. Cas d'erreur à essayer : créer deux fois le même nom (`409`), `name: "a"` (`400`), `year: 1800` (`400`), appeler l'API après déconnexion (`401`), id inventé `/api/saved-searches/123` (`400`).
 4. Vérifier dans MongoDB Compass : base du projet → collection `savedSearches`.
+
+---
+
+# Interface — page `/discover`
+
+Accessible depuis le bouton « Découvrir des films » de la page d'accueil. Mobile first : 2 colonnes d'affiches sur téléphone, 3–4 sur tablette/ordinateur, panneau « Mes recherches » à droite sur grand écran (lien « Mes recherches ↓ » sur mobile).
+
+- **Recherche** : titre, genre, année, note minimale, tri, pagination, message « aucun résultat ».
+- **CRUD** (connecté) : *Sauver* (C), liste + *Lancer* (R), *Renommer* / *Mettre à jour* les filtres avec la recherche affichée (U), *Supprimer* avec confirmation (D). Les erreurs de l'API (nom en double, etc.) s'affichent dans le panneau.
+- **PWA / hors ligne** : bandeau « Mode hors ligne » ; les recherches déjà consultées restent disponibles grâce au cache du service worker. Les recherches sauvegardées (`/api/saved-searches`) sont exclues du cache pour toujours afficher des données à jour (cache passé en `movie-explorer-v2`).

@@ -64,8 +64,13 @@ export default async function HomePage() {
             Trouvez les dernières sorties, organisez vos favoris et consultez les avis de la communauté.
           </p>
 
-          <div className="mt-8 p-12 border-2 border-dashed border-slate-800 rounded-xl text-slate-500">
-            [ Emplacement du catalogue de films  ]
+          <div className="mt-8">
+            <Link
+              href="/discover"
+              className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg transition-colors"
+            >
+              🔎 Découvrir des films
+            </Link>
           </div>
         </section>
       </main>

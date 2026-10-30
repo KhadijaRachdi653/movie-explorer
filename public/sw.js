@@ -1,4 +1,4 @@
-const CACHE_NAME = "movie-explorer-v1";
+const CACHE_NAME = "movie-explorer-v2";
 const OFFLINE_URL = "/offline";
 
 const PRECACHE_ASSETS = [
@@ -44,6 +44,7 @@ self.addEventListener("fetch", (event) => {
     request.url.includes("hot-update") ||
     request.url.includes("_next/hmr") ||
     request.url.includes("/api/auth") || // Évite de mettre en cache les sessions d'authentification
+    request.url.includes("/api/saved-searches") || // Données personnelles qui changent (CRUD) : jamais en cache
     request.url.startsWith("ws:") ||
     request.url.startsWith("wss:")
   ) {

@@ -1,24 +1,25 @@
 const CACHE_NAME = "movie-explorer-v1";
 const OFFLINE_URL = "/offline";
 
+// 💡 CORRECTION : On réduit les assets obligatoires à l'installation pour éviter le blocage 404 du dev
 const PRECACHE_ASSETS = [
   "/",
-  "/offline",
   "/icons/icon-192.png",
   "/icons/icon-512.png",
-  "/icons/maskable-icon-512.png",
 ];
 
+
+// 1. Installation du Service Worker et mise en cache des fichiers de base
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      // On utilise |no-cors| sur les routes internes si nécessaire, ou on force l'ajout
       return cache.addAll(PRECACHE_ASSETS);
     })
   );
   self.skipWaiting();
 });
 
+// 2. Nettoyage des anciens caches lors de l'activation
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
@@ -32,22 +33,23 @@ self.addEventListener("activate", (event) => {
   self.clients.claim();
 });
 
+// 3. Interception et stratégie de cache (Version corrigée pour Turbopack)
 self.addEventListener("fetch", (event) => {
   const { request } = event;
 
-  // À remplacer dans l'événement "fetch" :
   if (request.method !== "GET") return;
 
-  // 💡 AJOUT : Ignorer le HMR de Turbopack, Webpack, l'API Auth et les WebSockets de dev
+  // 💡 EXCLUSION CRUCIALE : On laisse passer TOUT le trafic de dev Next.js/Turbopack/Auth
   if (
-    request.url.includes("_next/webpack") ||
+    request.url.includes("_next") ||
+    request.url.includes("turbopack") ||
+    request.url.includes("hmr") ||
     request.url.includes("hot-update") ||
-    request.url.includes("_next/hmr") ||
-    request.url.includes("/api/auth") || // Évite de mettre en cache les sessions d'authentification
+    request.url.includes("/api/auth") ||
     request.url.startsWith("ws:") ||
     request.url.startsWith("wss:")
   ) {
-    return;
+    return; // Git ignore et bypass pour le développement
   }
 
   // Gestion de la navigation principale (Changement de page)
@@ -65,7 +67,6 @@ self.addEventListener("fetch", (event) => {
     caches.match(request).then((cachedResponse) => {
       const networkResponse = fetch(request)
         .then((response) => {
-          // Ne mettre en cache que les réponses valides et provenant de notre propre domaine
           if (response && response.status === 200 && response.url.startsWith(self.location.origin)) {
             const responseClone = response.clone();
             caches.open(CACHE_NAME).then((cache) => {

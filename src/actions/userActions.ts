@@ -1,211 +1,134 @@
 "use server";
 
-import dbConnect from "@/lib/mongodb";
+import { revalidatePath } from "next/cache";
+import { auth } from "@/lib/auth";
+import { connectToDatabase } from "@/lib/mongodb";
 import User from "@/models/User";
 import bcrypt from "bcryptjs";
-import { auth, signIn } from "@/lib/auth";
-import { revalidatePath } from "next/cache";
 
 export type ActionState = {
   error?: string | null;
   success?: string | null;
-  isValid?: boolean | null;
 };
 
-const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{6,10}$/;
+// 🔒 CLOISONNEMENT : Session obligatoire
+async function checkAuth() {
+  const session = await auth();
+  if (!session?.user?.id) {
+    throw new Error("Session expirée ou non autorisée.");
+  }
+  return session.user;
+}
 
-export async function registerUser(
+// 🔒 CLOISONNEMENT ADMInISTRATEUR : Rôle admin strict
+async function checkAdmin() {
+  const user = await checkAuth();
+  await connectToDatabase();
+  const dbUser = await User.findById(user.id);
+  if (!dbUser || dbUser.role !== "admin") {
+    throw new Error("Accès refusé. Réservé aux administrateurs.");
+  }
+}
+
+// 🛠️ MISE À JOUR DU PROFIL (Modifie le champ 'name')
+export async function updateProfile(
   prevState: ActionState,
   formData: FormData
 ): Promise<ActionState> {
   try {
-    await dbConnect();
+    const user = await checkAuth();
+    const name = (formData.get("username") as string)?.trim() ?? "";
 
-    const name = (formData.get("name") as string)?.trim();
-    const email = (formData.get("email") as string)?.trim()?.toLowerCase();
-    const password = formData.get("password") as string;
+    if (name.length < 3) {
+      return { error: "Le nom d'utilisateur doit faire au moins 3 caractères." };
+    }
 
-    if (!name || !email || !password) {
+    await connectToDatabase();
+    await User.findByIdAndUpdate(user.id, { name });
+    revalidatePath("/profile");
+    return { success: "Profil mis à jour avec succès !" };
+  } catch (err: any) {
+    return { error: err.message || "Erreur lors de la modification." };
+  }
+}
+
+// 🛠️ MODIFICATION DU MOT DE PASSE (Modifie le champ 'password')
+export async function changePassword(
+  prevState: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  try {
+    const user = await checkAuth();
+    const currentPassword = formData.get("currentPassword") as string;
+    const newPassword = formData.get("newPassword") as string;
+
+    if (!currentPassword || !newPassword) {
       return { error: "Tous les champs sont obligatoires." };
     }
 
-    if (!emailRegex.test(email)) {
-      return { error: "Veuillez fournir une adresse e-mail valide (contenant @ et un domaine)." };
+    if (newPassword.length < 8) {
+      return { error: "Le nouveau mot de passe doit faire au moins 8 caractères." };
     }
 
-    if (!passwordRegex.test(password)) {
-      return {
-        error: "Le mot de passe doit contenir entre 6 et 10 caractères, inclure au moins une majuscule, un chiffre et un caractère spécial."
-      };
+    await connectToDatabase();
+    const dbUser = await User.findById(user.id);
+
+    const isMatch = await bcrypt.compare(currentPassword, dbUser.password);
+    if (!isMatch) {
+      return { error: "Le mot de passe actuel est incorrect." };
     }
 
-    const userExists = await User.findOne({ email });
-    if (userExists) {
-      return { error: "Cet e-mail est déjà utilisé." };
-    }
+    const salt = await bcrypt.genSalt(12);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
 
-    const hashedPassword = await bcrypt.hash(password, 12);
-    const newDbUser = await User.create({ name, email, password: hashedPassword });
-
-    console.log("➡️ [SUCCESS] Nouvel utilisateur créé dans MongoDB :", newDbUser.email);
-
-    return { success: "Compte créé avec succès !" };
+    await User.findByIdAndUpdate(user.id, { password: hashedPassword });
+    return { success: "Votre mot de passe a été modifié avec succès !" };
   } catch (err: any) {
-    console.error("Erreur serveur détaillée :", err);
-    return { error: "Une erreur est survenue lors de l'inscription." };
+    return { error: err.message || "Une erreur technique est survenue." };
   }
 }
 
-export async function verifyUserCredentials(
-  prevState: ActionState,
-  formData: FormData
-): Promise<ActionState> {
+// 🛠️ MODÉRATION ADMInISTRATEUR : ACTIVER / BANnIR (Mise à jour ciblée)
+export async function toggleUserBan(userId: string): Promise<void> {
   try {
-    await dbConnect();
+    await checkAdmin();
+    await connectToDatabase();
 
-    const email = (formData.get("email") as string)?.trim()?.toLowerCase();
-    const password = formData.get("password") as string;
+    const target = await User.findById(userId);
+    if (!target) return;
 
-    if (!email || !password) {
-      return { error: "Veuillez remplir tous les champs." };
-    }
-
-    if (!emailRegex.test(email)) {
-      return { error: "Le format de l'adresse e-mail n'est pas valide." };
-    }
-
-    const user = await User.findOne({
-      email: { $regex: new RegExp(`^${email}$`, 'i') }
+    // Utilisation de findByIdAndUpdate avec $set pour éviter les erreurs de validation globales
+    await User.findByIdAndUpdate(userId, {
+      $set: { valide: !target.valide }
     });
 
-    if (!user) {
-      return {
-        error: "Ce compte n'existe pas dans la base. Souhaitez-vous créer un compte ?"
-      };
-    }
-
-    const isPasswordCorrect = await bcrypt.compare(password, user.password);
-    if (!isPasswordCorrect) {
-      return { error: "Mot de passe incorrect. Merci d'insérer des paramètres valides." };
-    }
-
-    try {
-      await signIn("credentials", {
-        email: user.email,
-        password: password,
-        redirect: false,
-      });
-    } catch (authError) {
-      console.error("Erreur interne Auth.js :", authError);
-      return { error: "Erreur lors de la création de la session d'authentification." };
-    }
-
-    return { isValid: true, success: "Connexion réussie !" };
+    revalidatePath("/admin/users");
   } catch (err) {
-    console.error("Erreur serveur détaillée :", err);
-    return { error: "Une erreur technique est survenue sur le serveur." };
+    console.error("Erreur action admin ban :", err);
   }
 }
 
-export async function updateProfile(formData: FormData) {
+// 🛠️ MODÉRATION ADMInISTRATEUR 2 : OPTION B (Mise à jour ciblée)
+export async function toggleUserRole(userId: string): Promise<void> {
   try {
-    const session = await auth();
-    if (!session?.user?.id) return { error: "Non autorisé." };
+    await checkAdmin();
+    await connectToDatabase();
 
-    await dbConnect();
-    const name = (formData.get("name") as string)?.trim();
-    if (!name) return { error: "Le nom ne peut pas être vide." };
+    const target = await User.findById(userId);
+    const currentAdmin = await auth();
 
-    await User.findByIdAndUpdate(session.user.id, { name });
-    revalidatePath("/profile");
-    return { success: "Profil mis à jour avec succès !" };
-  } catch (err) {
-    console.error("Erreur mise à jour profil :", err);
-    return { error: "Erreur lors de la modification du profil." };
-  }
-}
+    // Sécurité : l'administrateur connecté ne peut pas s'auto-rétrograder
+    if (!target || target._id.toString() === currentAdmin?.user?.id) return;
 
-export async function deleteAccount() {
-  try {
-    const session = await auth();
-    if (!session?.user?.id) return { error: "Non autorisé." };
+    const nextRole = target.role === "admin" ? "user" : "admin";
 
-    await dbConnect();
-    await User.findByIdAndDelete(session.user.id);
-
-    return { success: "Compte supprimé définitivement." };
-  } catch (err) {
-    console.error("Erreur suppression compte :", err);
-    return { error: "Erreur lors de la suppression du compte." };
-  }
-}
-
-export async function resetUserPassword(
-  prevState: ActionState,
-  formData: FormData
-): Promise<ActionState> {
-  try {
-    await dbConnect();
-
-    const email = (formData.get("email") as string)?.trim()?.toLowerCase();
-    const newPassword = formData.get("password") as string;
-
-    if (!email || !newPassword) {
-      return { error: "Veuillez remplir tous les champs." };
-    }
-
-    if (!emailRegex.test(email)) {
-      return { error: "Le format de l'adresse e-mail n'est pas valide." };
-    }
-
-    if (!passwordRegex.test(newPassword)) {
-      return {
-        error: "Le nouveau mot de passe doit contenir entre 6 et 10 caractères, inclure au moins une majuscule, un chiffre et un caractère spécial."
-      };
-    }
-
-    const user = await User.findOne({
-      email: { $regex: new RegExp(`^${email}$`, 'i') }
+    // Utilisation de findByIdAndUpdate avec $set pour éviter les erreurs de validation globales
+    await User.findByIdAndUpdate(userId, {
+      $set: { role: nextRole }
     });
 
-    if (!user) {
-      return { error: "Aucun compte n'est associé à cette adresse e-mail." };
-    }
-
-    const hashedPassword = await bcrypt.hash(newPassword, 12);
-    await User.findByIdAndUpdate(user._id, { password: hashedPassword });
-
-    console.log(`➡️ [SUCCESS] Mot de passe réinitialisé pour : ${user.email}`);
-
-    return { success: "Votre mot de passe a été réinitialisé avec succès ! Vous pouvez vous connecter." };
+    revalidatePath("/admin/users");
   } catch (err) {
-    console.error("Erreur réinitialisation :", err);
-    return { error: "Une erreur technique est survenue lors de la réinitialisation." };
-  }
-}
-
-export async function getAllUsers() {
-  try {
-    const session = await auth();
-
-    if (!session || (session.user as any).role !== "admin") {
-      throw new Error("Non autorisé.");
-    }
-
-    await dbConnect();
-
-    const users = await User.find({}, "name email role createdAt").lean();
-
-    return users.map((u: any) => ({
-      id: u._id.toString(),
-      name: u.name,
-      email: u.email,
-      role: u.role || "user",
-      createdAt: u.createdAt ? u.createdAt.toISOString() : new Date().toISOString()
-    }));
-  } catch (err) {
-    console.error("Erreur récupération utilisateurs admin :", err);
-    return [];
+    console.error("Erreur action admin rôle :", err);
   }
 }

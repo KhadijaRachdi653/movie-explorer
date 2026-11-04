@@ -1,106 +1,108 @@
 "use client";
 
-import { useActionState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, type FormEvent, useEffect } from "react";
+import { signIn, useSession } from "next-auth/react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { verifyUserCredentials } from "@/actions/userActions";
 
 export default function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const registered = searchParams.get("registered");
+  const { status } = useSession();
 
-  // Correction : Alignement strict de l'état initial avec le type ActionState du serveur
-  const [state, formAction, isPending] = useActionState(verifyUserCredentials, {
-    error: null,
-    success: null,
-    isValid: null,
-  });
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
+  // 💡 SÉCURITÉ : Vider les champs si l'utilisateur est déconnecté du système
   useEffect(() => {
-    if (state?.isValid) {
+    if (status === "unauthenticated") {
+      setEmail("");
+      setPassword("");
+    }
+  }, [status]);
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError("");
+    setLoading(true);
+
+    try {
+      const result = await signIn("credentials", {
+        email: email.toLowerCase().trim(),
+        password,
+        redirect: false,
+      });
+
+      if (result?.error) {
+        setError("Identifiants incorrects ou compte non validé.");
+        setPassword(""); // 💡 Vide le champ mot de passe après un échec
+        return;
+      }
+
+      // 💡 Succès : vider les états avant de changer de page
+      setEmail("");
+      setPassword("");
       router.push("/");
       router.refresh();
+    } catch {
+      setError("Une erreur réseau est survenue.");
+    } finally {
+      setLoading(false);
     }
-  }, [state?.isValid, router]);
+  }
 
   return (
-    <div className="w-full max-w-md mx-auto p-6 bg-white rounded-lg shadow-md border border-gray-100">
-      <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">
-        Connexion
-      </h2>
+    <div className="w-full max-w-md mx-auto p-6 bg-slate-900 rounded-2xl shadow-lg border border-slate-800 text-white">
+      <h2 className="text-2xl font-bold text-center text-slate-100 mb-6">Connexion</h2>
 
-      <form action={formAction} className="space-y-4">
+      {registered && (
+        <p className="mb-4 text-sm p-3 bg-green-500/20 text-green-400 rounded-lg text-center font-medium">
+          ✓ Inscription réussie ! Vérifiez vos e-mails pour activer votre compte.
+        </p>
+      )}
+
+      <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-            Adresse e-mail
-          </label>
+          <label htmlFor="email" className="block text-sm font-medium text-slate-300 mb-1">Adresse e-mail</label>
           <input
             id="email"
-            name="email"
-            type="email"
-            required
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="exemple@esprit.tn"
+             type="email"
+             required
+             value={email}
+             onChange={(e) => setEmail(e.target.value)}
+             autoComplete="off" // 💡 Bloque le pré-remplissage historique du navigateur
+             spellCheck="false"
+             className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+             placeholder="exemple@esprit.tn"
           />
         </div>
 
-        <div className="space-y-1">
-          <div className="flex justify-between items-center">
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-              Mot de passe
-            </label>
-            <Link
-              href="/forgot-password"
-              className="text-xs text-blue-600 hover:underline font-medium transition-colors"
-            >
-              Mot de passe oublié ?
-            </Link>
+        <div>
+          <div className="flex justify-between items-center mb-1">
+            <label htmlFor="password" className="block text-sm font-medium text-slate-300">Mot de passe</label>
+            <Link href="/forgot-password" className="text-xs text-blue-400 hover:underline">Mot de passe oublié ?</Link>
           </div>
           <input
             id="password"
-            name="password"
             type="password"
             required
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            autoComplete="new-password" // 💡 Force le navigateur à vider ce champ après déconnexion
+            className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
             placeholder="••••••••"
           />
         </div>
 
-        {state?.error && (
-          <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-md text-sm flex flex-col gap-2 transition-all">
-            <span className="font-medium">{state.error}</span>
+        {error && <p className="text-sm text-red-400 font-medium">{error}</p>}
 
-            {state.error.includes("créer un compte") && (
-              <Link
-                href="/register"
-                className="mt-1 text-center font-semibold text-blue-600 hover:text-blue-800 underline transition-colors"
-              >
-                Créer un compte maintenant ➡️
-              </Link>
-            )}
-          </div>
-        )}
-
-        {state?.isValid && (
-          <div className="p-3 bg-green-50 border border-green-200 text-green-700 rounded-md text-sm font-medium text-center">
-            Connexion réussie ! Redirection...
-          </div>
-        )}
-
-        <button
-          type="submit"
-          disabled={isPending}
-          className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md transition-colors disabled:bg-blue-400 disabled:cursor-not-allowed"
-        >
-          {isPending ? "Vérification en cours..." : "Se connecter"}
+        <button type="submit" disabled={loading} className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 font-semibold rounded-lg disabled:opacity-50">
+          {loading ? "Vérification..." : "Se connecter"}
         </button>
       </form>
-
-      <p className="mt-4 text-sm text-center text-gray-600">
-        Nouveau sur Movie Explorer ?{" "}
-        <Link href="/register" className="text-blue-600 hover:underline font-medium">
-          S'inscrire
-        </Link>
-      </p>
     </div>
   );
 }

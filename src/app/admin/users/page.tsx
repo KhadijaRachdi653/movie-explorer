@@ -3,6 +3,7 @@ import { connectToDatabase } from "@/lib/mongodb";
 import User from "@/models/User";
 import { redirect } from "next/navigation";
 import { toggleUserBan, toggleUserRole } from "@/actions/userActions";
+import Link from "next/link";
 
 export const metadata = {
   title: "Administration | CINEA",
@@ -34,40 +35,58 @@ export default async function AdminUsersPage() {
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="border-b border-[var(--border-subtle)] bg-[var(--background)] text-[var(--text-muted)] text-xs font-bold uppercase tracking-wider transition-colors">
-              <th className="p-5">Utilisateur</th>
+              <th className="p-5 pl-8">Utilisateur</th>
               <th className="p-5">Email</th>
               <th className="p-5">Rôle actuel</th>
               <th className="p-5">Statut de validation</th>
               <th className="p-5 text-center">Actions de modération</th>
+              <th className="p-5 pr-8 text-right">Fiche</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[var(--border-subtle)] text-sm font-medium transition-colors">
             {users.map((u) => {
               const isSelf = u._id.toString() === dbUser._id.toString();
+              const userDetailUrl = `/admin/users/${u._id.toString()}`;
+
               return (
-                <tr key={u._id.toString()} className="hover:bg-[var(--background)]/40 transition-colors">
-                  <td className="p-5 text-[var(--text-primary)] font-semibold">{u.name}</td>
-                  <td className="p-5 text-[var(--text-muted)]">{u.email}</td>
-                  <td className="p-5">
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-bold border transition-colors ${
-                        u.role === 'admin'
-                          ? 'bg-[var(--surface-variant)] text-[var(--accent-light)] border-[var(--border-subtle)]'
-                          : 'bg-[var(--background)] text-[var(--text-muted)] border-[var(--border-subtle)]'
-                      }`}
-                    >
-                      {u.role?.toUpperCase()}
-                    </span>
+                <tr
+                  key={u._id.toString()}
+                  className="user-row hover:bg-[var(--background)]/40 transition-colors"
+                  tabIndex={0}
+                >
+                  {/* Colonne Utilisateur */}
+                  <td className="p-5 pl-8 font-semibold text-[var(--text-primary)]">
+                    <Link href={userDetailUrl} className="block w-full h-full">
+                      {u.name}
+                    </Link>
                   </td>
-                  <td className="p-5">
-                    <span
-                      className={`text-xs font-bold transition-colors ${
-                        u.valide ? 'text-[var(--text-primary)] opacity-80' : 'text-[var(--text-muted)] italic font-normal'
-                      }`}
-                    >
-                      {u.valide ? "✓ Compte Validé" : "En attente / Bloqué"}
-                    </span>
+
+                  {/* Colonne Email */}
+                  <td className="p-5 text-[var(--text-muted)]">
+                    <Link href={userDetailUrl} className="block w-full h-full">
+                      {u.email}
+                    </Link>
                   </td>
+
+                  {/* Colonne Rôle actuel */}
+                  <td className="p-5">
+                    <Link href={userDetailUrl} className="inline-block">
+                      <span className={`px-3 py-1 rounded-full text-xs font-bold border transition-colors ${u.role === 'admin' ? 'bg-[var(--surface-variant)] text-[var(--accent-light)] border-[var(--border-subtle)]' : 'bg-[var(--background)] text-[var(--text-muted)] border-[var(--border-subtle)]'}`}>
+                        {u.role?.toUpperCase()}
+                      </span>
+                    </Link>
+                  </td>
+
+                  {/* Colonne Statut de validation */}
+                  <td className="p-5">
+                    <Link href={userDetailUrl} className="inline-block">
+                      <span className={`status-pill ${u.valide ? "status--active" : "status--blocked"}`}>
+                        {u.valide ? "Compte Validé" : "Compte Bloqué"}
+                      </span>
+                    </Link>
+                  </td>
+
+                  {/* 💡 CORRECTION DU BUG : Retrait de l'événement onClick interactif interdit côté serveur */}
                   <td className="p-5 flex justify-center gap-4">
                     <form action={async () => { "use server"; await toggleUserBan(u._id.toString()); }}>
                       <button
@@ -82,11 +101,18 @@ export default async function AdminUsersPage() {
                       <button
                         type="submit"
                         disabled={isSelf}
-                        className="px-4 py-2 rounded-xl font-bold text-xs bg-transparent text-[var(--accent-light)] border border-[var(--border-subtle)] hover:bg-[var(--surface-variant)] disabled:opacity-20 disabled:cursor-not-allowed transition-all active:scale-95 cursor-pointer uppercase tracking-wider"
+                        className="px-4 py-2 rounded-xl font-bold text-xs bg-transparent text-[var(--accent-light)] border border-[var(--accent)] hover:bg-[var(--surface-variant)] disabled:opacity-20 disabled:cursor-not-allowed transition-all active:scale-95 cursor-pointer uppercase tracking-wider"
                       >
                         {u.role === "admin" ? "Rétrograder" : "Nommer Admin 🛡️"}
                       </button>
                     </form>
+                  </td>
+
+                  {/* Discret chevron navigable Figma à l'extrême droite */}
+                  <td className="p-5 pr-8 text-right text-base font-bold">
+                    <Link href={userDetailUrl} className="row-chevron">
+                      ›
+                    </Link>
                   </td>
                 </tr>
               );

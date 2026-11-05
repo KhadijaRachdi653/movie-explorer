@@ -43,3 +43,83 @@ input:focus, button:focus, select:focus, textarea:focus {
 /* Masquage ergonomique de la scrollbar pour les listes horizontales */
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* 💡 STYLES DE TABLEAU ADMINISTRATIF PRÉMIUM FIGMA */
+
+.user-row {
+  height: 58px;
+  cursor: pointer;
+  position: relative;
+  transition: background-color 160ms ease, box-shadow 160ms ease;
+}
+
+/* Effet au survol : fond doux + barre champagne de 3px à gauche (inset) */
+.user-row:hover {
+  background-color: var(--surface-variant) !important;
+  box-shadow: inset 3px 0 0 var(--accent, #8C692E);
+}
+
+/* Optionnel : Style si la ligne correspond à la page en cours (sélectionnée) */
+.user-row.is-selected {
+  background-color: var(--surface-variant);
+  box-shadow: inset 4px 0 0 var(--accent-light, #D7BC83);
+}
+
+/* Accessibilité au clavier pour la soutenance */
+.user-row:focus-visible {
+  outline: 2px solid var(--accent, #8C692E);
+  outline-offset: -2px;
+}
+
+/* Le Chevron de navigation à droite */
+.row-chevron {
+  color: var(--text-muted);
+  font-size: 20px;
+  display: inline-block;
+  transition: transform 160ms ease, color 160ms ease;
+}
+
+.user-row:hover .row-chevron {
+  color: var(--accent, #8C692E);
+  transform: translateX(3px);
+}
+
+/* 🟢 CONFIGURATION DES STATUTS DISCRETS FIGMA (Pills) */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+
+.status-pill::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: currentColor;
+}
+
+/* Mode Validé (Vert désaturé) */
+.status--active {
+  color: #2e6045;
+  background-color: rgba(46, 96, 69, 0.12);
+}
+.dark .status--active {
+  color: #4ade80;
+  background-color: rgba(74, 222, 128, 0.1);
+}
+
+/* Mode Bloqué (Rouge désaturé) */
+.status--blocked {
+  color: #96443c;
+  background-color: rgba(150, 68, 60, 0.12);
+}
+.dark .status--blocked {
+  color: #f87171;
+  background-color: rgba(248, 113, 113, 0.1);
+}

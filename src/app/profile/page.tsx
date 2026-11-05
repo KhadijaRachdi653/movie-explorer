@@ -29,6 +29,7 @@ export default async function ProfilePage() {
   };
 
   const isAdmin = dbUser.role === "admin";
+  const isSubscribed = dbUser.isSubscribed !== false; // Vrai par défaut
 
   return (
     <div className="mx-auto max-w-4xl p-6 text-[var(--text-primary)] transition-all">
@@ -37,9 +38,20 @@ export default async function ProfilePage() {
           <h1 className="text-3xl font-extrabold tracking-tight text-[var(--accent)]">
             Gestion de mon compte
           </h1>
-          <p className="text-sm text-[var(--text-muted)] mt-1 font-medium">
-            Espace membre — Rôle : <span className="font-bold text-[var(--accent-light)]">{dbUser.role?.toUpperCase() || "USER"}</span>
-          </p>
+          <div className="flex flex-wrap items-center gap-3 mt-1.5">
+            <p className="text-sm text-[var(--text-muted)] font-medium">
+              Espace membre — Rôle : <span className="font-bold text-[var(--accent-light)]">{dbUser.role?.toUpperCase() || "USER"}</span>
+            </p>
+            <span className="text-[var(--text-muted)] opacity-40">•</span>
+            {/* 💡 BADGE D'ABONNEMENT PREMIUM CONFORME FIGMA */}
+            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase border ${
+              isSubscribed
+                ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
+                : "bg-amber-500/10 text-amber-500 border-amber-500/20"
+            }`}>
+              {isSubscribed ? "✨ Premium Actif" : "👤 Compte Gratuit"}
+            </span>
+          </div>
         </div>
 
         {isAdmin && (
@@ -52,7 +64,7 @@ export default async function ProfilePage() {
         )}
       </div>
 
-      <ProfileForm user={userData} />
+      <ProfileForm user={userData} isSubscribed={isSubscribed} />
     </div>
   );
 }

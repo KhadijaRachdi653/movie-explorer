@@ -4,6 +4,7 @@ import User from "@/models/User";
 import { redirect } from "next/navigation";
 import { toggleUserBan, toggleUserRole } from "@/actions/userActions";
 import Link from "next/link";
+import PushRegisterButton from "@/components/admin/PushRegisterButton";
 
 export const metadata = {
   title: "Administration | CINEA",
@@ -18,7 +19,19 @@ export default async function AdminUsersPage() {
     redirect("/");
   }
 
-  const users = await User.find({}).sort({ createdAt: -1 });
+  // Extraction brute des comptes
+  const rawUsers = await User.find({}).sort({ createdAt: -1 }).lean();
+
+  // 💡 SÉCURISATION DES PLAN OBJECTS : Conversion manuelle pour éliminer l'erreur de transfert
+  const users = rawUsers.map((u) => ({
+    id: u._id.toString(),
+    name: String(u.name || "Cinéphile"),
+    email: String(u.email || ""),
+    role: String(u.role || "user"),
+    valide: Boolean(u.valide),
+  }));
+
+  const currentAdminId = dbUser._id.toString();
 
   return (
     <div className="mx-auto max-w-7xl p-6 text-[var(--text-primary)] transition-all">
@@ -30,6 +43,9 @@ export default async function AdminUsersPage() {
           Panneau de modération et d'administration de la plateforme CINEA
         </p>
       </div>
+
+      {/* Le bouton d'appairage Push native */}
+      <PushRegisterButton />
 
       <div className="overflow-x-auto rounded-[22px] bg-[var(--surface)] border border-[var(--border-subtle)] shadow-xl transition-colors">
         <table className="w-full text-left border-collapse">
@@ -45,12 +61,12 @@ export default async function AdminUsersPage() {
           </thead>
           <tbody className="divide-y divide-[var(--border-subtle)] text-sm font-medium transition-colors">
             {users.map((u) => {
-              const isSelf = u._id.toString() === dbUser._id.toString();
-              const userDetailUrl = `/admin/users/${u._id.toString()}`;
+              const isSelf = u.id === currentAdminId;
+              const userDetailUrl = `/admin/users/${u.id}`;
 
               return (
                 <tr
-                  key={u._id.toString()}
+                  key={u.id}
                   className="user-row hover:bg-[var(--background)]/40 transition-colors"
                   tabIndex={0}
                 >
@@ -72,7 +88,7 @@ export default async function AdminUsersPage() {
                   <td className="p-5">
                     <Link href={userDetailUrl} className="inline-block">
                       <span className={`px-3 py-1 rounded-full text-xs font-bold border transition-colors ${u.role === 'admin' ? 'bg-[var(--surface-variant)] text-[var(--accent-light)] border-[var(--border-subtle)]' : 'bg-[var(--background)] text-[var(--text-muted)] border-[var(--border-subtle)]'}`}>
-                        {u.role?.toUpperCase()}
+                        {u.role.toUpperCase()}
                       </span>
                     </Link>
                   </td>
@@ -86,9 +102,9 @@ export default async function AdminUsersPage() {
                     </Link>
                   </td>
 
-                  {/* 💡 CORRECTION DU BUG : Retrait de l'événement onClick interactif interdit côté serveur */}
+                  {/* Colonne Actions de modération */}
                   <td className="p-5 flex justify-center gap-4">
-                    <form action={async () => { "use server"; await toggleUserBan(u._id.toString()); }}>
+                    <form action={async () => { "use server"; await toggleUserBan(u.id); }}>
                       <button
                         type="submit"
                         className="px-4 py-2 rounded-xl font-bold text-xs text-[var(--text-primary)] border border-[var(--border-subtle)] bg-[var(--background)] hover:bg-[var(--surface-variant)] transition-all active:scale-95 cursor-pointer shadow-sm"
@@ -97,7 +113,7 @@ export default async function AdminUsersPage() {
                       </button>
                     </form>
 
-                    <form action={async () => { "use server"; await toggleUserRole(u._id.toString()); }}>
+                    <form action={async () => { "use server"; await toggleUserRole(u.id); }}>
                       <button
                         type="submit"
                         disabled={isSelf}
@@ -108,7 +124,7 @@ export default async function AdminUsersPage() {
                     </form>
                   </td>
 
-                  {/* Discret chevron navigable Figma à l'extrême droite */}
+                  {/* Discret chevron navigable Figma */}
                   <td className="p-5 pr-8 text-right text-base font-bold">
                     <Link href={userDetailUrl} className="row-chevron">
                       ›

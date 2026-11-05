@@ -4,12 +4,29 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { connectToDatabase } from "@/lib/mongodb";
 import User from "@/models/User";
+import PushSubscription from "@/models/PushSubscription";
 import bcrypt from "bcryptjs";
+import webpush from "web-push";
 
 export type ActionState = {
   error?: string | null;
   success?: string | null;
 };
+
+// 💡 CONFIGURATION INITIALE DU MOTEUR WEB-PUSH NATIF DE LA PWA
+if (
+  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY &&
+  process.env.VAPID_PRIVATE_KEY &&
+  process.env.VAPID_SUBJECT
+) {
+  webpush.setVapidDetails(
+    process.env.VAPID_SUBJECT,
+    process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
+    process.env.VAPID_PRIVATE_KEY
+  );
+} else {
+  console.warn("⚠️ Les variables VAPID ne sont pas encore totalement initialisées.");
+}
 
 // 🔒 CLOISONNEMENT : Session obligatoire
 async function checkAuth() {
@@ -20,7 +37,7 @@ async function checkAuth() {
   return session.user;
 }
 
-// 🔒 CLOISONNEMENT ADMInISTRATEUR : Rôle admin strict
+// 🔒 CLOISONNEMENT ADMINISTRATEUR : Rôle admin strict
 async function checkAdmin() {
   const user = await checkAuth();
   await connectToDatabase();
@@ -88,7 +105,74 @@ export async function changePassword(
   }
 }
 
-// 🛠️ MODÉRATION ADMInISTRATEUR : ACTIVER / BANnIR (Mise à jour ciblée)
+// 🛠️ GESTION DE L'ABONNEMENT STREAMING + PROPULSION DU PUSH PHYSIQUE NATIF
+export async function toggleSubscription(): Promise<ActionState> {
+  try {
+    const user = await checkAuth();
+    await connectToDatabase();
+
+    const dbUser = await User.findById(user.id);
+    if (!dbUser) {
+      return { error: "Cinéphile introuvable." };
+    }
+
+    const nextSubscriptionState = !dbUser.isSubscribed;
+
+    // 1. Mise à jour de l'état d'abonnement en base de données
+    await User.findByIdAndUpdate(user.id, {
+      $set: { isSubscribed: nextSubscriptionState }
+    });
+
+    // 2. Préparation du payload JSON textuel pour la bulle d'alerte OS
+    const notificationPayload = JSON.stringify({
+      title: "Alerte Système CINEA 🎬",
+      body: nextSubscriptionState
+        ? `✨ Le membre ${dbUser.name} vient d'activer son accès Premium Streaming.`
+        : `👤 Le membre ${dbUser.name} a résilié son abonnement Streaming.`,
+      userId: dbUser._id.toString() // Transmis pour permettre la redirection au clic
+    });
+
+    // 3. 📡 RÉCUPÉRATION ET PROPULSION DU PUSH VERS LES NAVIGATEURS DES ADMINS
+    const activeSubscriptions = await PushSubscription.find({});
+
+    // Envoi asynchrone parallélisé vers tous les terminaux enregistrés
+    const pushPromises = activeSubscriptions.map(async (sub) => {
+      try {
+        const pushTarget = {
+          endpoint: sub.endpoint,
+          keys: {
+            p256dh: sub.keys.p256dh,
+            auth: sub.keys.auth
+          }
+        };
+
+        // Envoi physique chiffré
+        await webpush.sendNotification(pushTarget, notificationPayload);
+      } catch (pushError: any) {
+        // Sécurité PWA : Si le navigateur de l'admin a expiré ou supprimé l'autorisation (Status 410), on nettoie la base
+        if (pushError.statusCode === 410 || pushError.statusCode === 404) {
+          await PushSubscription.findByIdAndDelete(sub._id);
+        }
+        console.error("Échec d'envoi d'un push vers un terminal :", pushError.message);
+      }
+    });
+
+    await Promise.all(pushPromises);
+
+    revalidatePath("/profile");
+    revalidatePath("/admin/users");
+
+    return {
+      success: nextSubscriptionState
+        ? "Félicitations ! Votre accès Premium Streaming est désormais actif."
+        : "Votre abonnement a été résilié. Vous repassez en compte Cinéphile gratuit."
+    };
+  } catch (err: any) {
+    return { error: err.message || "Une erreur sur le serveur de Push." };
+  }
+}
+
+// 🛠️ MODÉRATION ADMINISTRATEUR : ACTIVER / BANNIR
 export async function toggleUserBan(userId: string): Promise<void> {
   try {
     await checkAdmin();
@@ -97,7 +181,6 @@ export async function toggleUserBan(userId: string): Promise<void> {
     const target = await User.findById(userId);
     if (!target) return;
 
-    // Utilisation de findByIdAndUpdate avec $set pour éviter les erreurs de validation globales
     await User.findByIdAndUpdate(userId, {
       $set: { valide: !target.valide }
     });
@@ -108,7 +191,7 @@ export async function toggleUserBan(userId: string): Promise<void> {
   }
 }
 
-// 🛠️ MODÉRATION ADMInISTRATEUR 2 : OPTION B (Mise à jour ciblée)
+// 🛠️ MODÉRATION ADMINISTRATEUR 2 : ATTRIBUTION DE RÔLE
 export async function toggleUserRole(userId: string): Promise<void> {
   try {
     await checkAdmin();
@@ -117,12 +200,10 @@ export async function toggleUserRole(userId: string): Promise<void> {
     const target = await User.findById(userId);
     const currentAdmin = await auth();
 
-    // Sécurité : l'administrateur connecté ne peut pas s'auto-rétrograder
     if (!target || target._id.toString() === currentAdmin?.user?.id) return;
 
     const nextRole = target.role === "admin" ? "user" : "admin";
 
-    // Utilisation de findByIdAndUpdate avec $set pour éviter les erreurs de validation globales
     await User.findByIdAndUpdate(userId, {
       $set: { role: nextRole }
     });

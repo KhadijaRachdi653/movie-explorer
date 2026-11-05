@@ -110,7 +110,7 @@ export default function ProfilePage() {
 
         <form onSubmit={handleUpdate} className="mt-6 space-y-4">
           <div>
-            <label className="block text-sm mb-1">Nom d'utilisateur</label>
+            <label className="block text-sm mb-1">Nom d&apos;utilisateur</label>
             <input
               name="name"
               type="text"
@@ -161,7 +161,7 @@ export default function ProfilePage() {
           <h2 className="text-xl font-bold text-blue-400 flex items-center gap-2">
             📋 Liste des Utilisateurs Enregistrés
           </h2>
-          <p className="text-xs text-slate-400 mt-1 mb-6">Gestion des comptes et des droits d'accès</p>
+          <p className="text-xs text-slate-400 mt-1 mb-6">Gestion des comptes et des droits d&apos;accès</p>
 
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm text-slate-300">

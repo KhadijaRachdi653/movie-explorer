@@ -3,14 +3,19 @@
 import dbConnect from "@/lib/mongodb";
 import User from "@/models/User";
 import bcrypt from "bcryptjs";
-import { auth, signIn } from "@/lib/auth";
+import { auth, signIn, signOut } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
+import type { Types } from "mongoose";
 
 export type ActionState = {
   error?: string | null;
   success?: string | null;
   isValid?: boolean | null;
 };
+
+export async function signOutUser() {
+  await signOut({ redirectTo: "/" });
+}
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -52,7 +57,7 @@ export async function registerUser(
     console.log("➡️ [SUCCESS] Nouvel utilisateur créé dans MongoDB :", newDbUser.email);
 
     return { success: "Compte créé avec succès !" };
-  } catch (err: any) {
+  } catch (err) {
     console.error("Erreur serveur détaillée :", err);
     return { error: "Une erreur est survenue lors de l'inscription." };
   }
@@ -191,15 +196,21 @@ export async function getAllUsers() {
   try {
     const session = await auth();
 
-    if (!session || (session.user as any).role !== "admin") {
+    if (!session || session.user.role !== "admin") {
       throw new Error("Non autorisé.");
     }
 
     await dbConnect();
 
-    const users = await User.find({}, "name email role createdAt").lean();
+    const users = await User.find({}, "name email role createdAt").lean<{
+      _id: Types.ObjectId;
+      name: string;
+      email: string;
+      role?: string;
+      createdAt?: Date;
+    }[]>();
 
-    return users.map((u: any) => ({
+    return users.map((u) => ({
       id: u._id.toString(),
       name: u.name,
       email: u.email,

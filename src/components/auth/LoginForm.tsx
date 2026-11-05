@@ -36,7 +36,7 @@ export default function LoginForm() {
             name="email"
             type="email"
             required
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="exemple@esprit.tn"
           />
         </div>
@@ -58,7 +58,7 @@ export default function LoginForm() {
             name="password"
             type="password"
             required
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="••••••••"
           />
         </div>
@@ -96,7 +96,7 @@ export default function LoginForm() {
       <p className="mt-4 text-sm text-center text-gray-600">
         Nouveau sur Movie Explorer ?{" "}
         <Link href="/register" className="text-blue-600 hover:underline font-medium">
-          S'inscrire
+          S&apos;inscrire
         </Link>
       </p>
     </div>

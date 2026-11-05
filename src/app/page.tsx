@@ -1,53 +1,13 @@
-import { auth, signOut } from "@/lib/auth";
+import { auth } from "@/lib/auth";
 import Link from "next/link";
+import AppHeader from "@/components/layout/AppHeader";
 
 export default async function HomePage() {
   const session = await auth();
 
-  const handleSignOut = async () => {
-    "use server";
-    await signOut({ redirectTo: "/" });
-  };
-
   return (
     <div className="min-h-screen bg-slate-950 text-white">
-      <header className="border-b border-slate-800 p-4 flex justify-between items-center bg-slate-900/50 backdrop-blur">
-        <div className="flex items-center gap-2 font-bold text-xl text-blue-500">
-          🎬 Movie Explorer
-        </div>
-
-        <nav className="flex gap-4 items-center">
-          {session ? (
-            <>
-              <span className="text-sm text-slate-400">
-                Bonjour, <strong className="text-white">{session.user?.name}</strong> !
-              </span>
-
-              <Link href="/profile" className="text-sm text-slate-200 hover:text-white underline">
-                Mon Profil
-              </Link>
-
-              <form action={handleSignOut} className="inline">
-                <button
-                  type="submit"
-                  className="text-sm bg-red-600/80 hover:bg-red-700 text-white px-3 py-1.5 rounded-md transition-colors"
-                >
-                  Déconnexion
-                </button>
-              </form>
-            </>
-          ) : (
-            <>
-              <Link href="/login" className="text-sm hover:underline">
-                Se connecter
-              </Link>
-              <Link href="/register" className="text-sm bg-blue-600 hover:bg-blue-700 px-3 py-1.5 rounded-md transition-colors">
-                Créer un compte
-              </Link>
-            </>
-          )}
-        </nav>
-      </header>
+      <AppHeader />
 
       <main className="max-w-7xl mx-auto p-6 space-y-8">
         {session && (
@@ -72,6 +32,11 @@ export default async function HomePage() {
               🔎 Découvrir des films
             </Link>
           </div>
+          {session && (
+            <Link href="/collection" className="inline-block rounded-lg border border-slate-700 px-6 py-3 font-semibold text-slate-200 transition-colors hover:border-blue-500 hover:text-white">
+              ♥ Ma collection
+            </Link>
+          )}
         </section>
       </main>
     </div>

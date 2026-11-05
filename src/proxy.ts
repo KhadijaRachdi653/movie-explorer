@@ -2,13 +2,15 @@ import { auth } from "@/lib/auth";
 
 export default auth((req) => {
   const isLoggedIn = !!req.auth;
-  const isProfilePage = req.nextUrl.pathname.startsWith("/profile");
+  const isPrivatePage = ["/profile", "/collection", "/favorites", "/watchlist"].some((path) =>
+    req.nextUrl.pathname.startsWith(path)
+  );
 
-  if (isProfilePage && !isLoggedIn) {
+  if (isPrivatePage && !isLoggedIn) {
     return Response.redirect(new URL("/login", req.nextUrl));
   }
 });
 
 export const config = {
-  matcher: ["/profile/:path*", "/watchlist/:path*", "/favorites/:path*"],
+  matcher: ["/profile/:path*", "/collection/:path*", "/watchlist/:path*", "/favorites/:path*"],
 };

@@ -29,7 +29,7 @@ export default function ForgotPasswordForm() {
       }
 
       setMessage(data.message);
-      setEmail(""); // 💡 VIDAGE DU CHAMP EMAIL après l'envoi réussi
+      setEmail("");
     } catch {
       setError("Erreur de connexion avec le serveur.");
     } finally {
@@ -38,31 +38,44 @@ export default function ForgotPasswordForm() {
   }
 
   return (
-    <div className="w-full max-w-md mx-auto p-6 bg-slate-900 rounded-2xl shadow-lg border border-slate-800 text-white">
-      <h1 className="text-2xl font-bold text-center">Mot de passe oublié</h1>
-      <p className="mt-2 text-sm text-slate-400 text-center">Saisissez votre adresse e-mail pour recevoir un lien d'activation sécurisé.</p>
+    <div className="w-full max-w-md mx-auto p-8 bg-[var(--surface)] rounded-[22px] shadow-xl border border-[var(--surface-variant)] text-[var(--text-primary)] transition-all">
+      <h1 className="text-3xl font-extrabold text-center tracking-tight mb-2 text-[var(--accent-light,#D7BC83)]">Mot de passe oublié</h1>
+      <p className="text-sm text-[var(--text-muted)] text-center mb-8 font-medium">Un lien de réinitialisation sécurisé vous sera envoyé.</p>
 
-      <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-5">
         <div>
-          <label htmlFor="email" className="mb-1 block text-sm font-medium text-slate-300">Adresse e-mail</label>
+          <label htmlFor="email" className="block text-[10px] font-extrabold uppercase tracking-widest text-[var(--text-muted)] mb-2">
+            Adresse e-mail
+          </label>
           <input
             id="email"
             type="email"
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-lg border border-slate-700 bg-slate-950 p-3 text-white"
+            autoComplete="off"
+            className="w-full px-4 py-3.5 bg-[var(--background)] border border-[var(--surface-variant)] rounded-xl focus:outline-none focus:border-[var(--accent)] text-[var(--text-primary)] transition-colors text-sm"
             placeholder="votre.nom@esprit.tn"
           />
         </div>
 
-        {error && <p className="text-sm text-red-400 font-medium">{error}</p>}
-        {message && <p className="text-sm text-green-400 font-medium">{message}</p>}
+        {error && <p className="text-xs text-amber-600 font-semibold bg-amber-500/10 p-3 rounded-xl border border-amber-500/20">{error}</p>}
+        {message && <p className="text-xs text-green-500 font-semibold bg-green-500/10 p-3 rounded-xl border border-green-500/20">{message}</p>}
 
-        <button type="submit" disabled={loading} className="w-full rounded-lg bg-blue-600 p-3 font-semibold text-white disabled:opacity-50">
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full py-3.5 bg-[var(--accent-light,#D7BC83)] text-[#1B1B19] font-extrabold rounded-xl transition-transform active:scale-95 disabled:opacity-50 text-xs uppercase tracking-wider shadow-md hover:brightness-110 cursor-pointer"
+        >
           {loading ? "Envoi en cours..." : "Envoyer le lien"}
         </button>
       </form>
+
+      <p className="mt-6 text-sm text-center text-[var(--text-muted)]">
+        <Link href="/login" className="text-[var(--accent-light,#D7BC83)] font-bold hover:underline">
+          Retour à la connexion
+        </Link>
+      </p>
     </div>
   );
 }

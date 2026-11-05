@@ -1,46 +1,27 @@
-import type { Metadata, Viewport } from "next";
-import "./globals.css";
+import { ThemeProvider } from "@/components/layout/ThemeProvider";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import RegisterSW from "@/components/pwa/RegisterSW";
 import { AuthProvider } from "@/components/providers/AuthProvider";
+//import AuthProvider from "@/components/providers/AuthProvider";
+import "@/app/globals.css";
 
-export const metadata: Metadata = {
-  title: {
-    default: "Movie Explorer",
-    template: "%s | Movie Explorer",
-  },
-  description: "Découvrez, recherchez, sauvegardez, notez et organisez vos films préférés.",
-  applicationName: "Movie Explorer",
-  manifest: "/manifest.webmanifest", // 💡 CORRECTION ICI
-  appleWebApp: {
-    capable: true,
-    title: "Movie Explorer",
-    statusBarStyle: "black-translucent",
-  },
-  icons: {
-    icon: "/icons/icon-192.png",
-    apple: "/icons/icon-192.png",
-  },
+export const metadata = {
+  title: "CINEA | Movie Explorer",
+  description: "Découvrez et organisez vos films préférés en temps réel.",
 };
 
-export const viewport: Viewport = {
-  width: "device-width",
-  initialScale: 1,
-  themeColor: "#0d6efd",
-};
-
-export default function RootLayout({
-  children,
-}: Readonly<{ children: React.ReactNode }>) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="fr">
-      <body className="flex min-h-screen flex-col bg-slate-950 text-slate-100">
+    <html lang="fr" className="no-scrollbar">
+      <body>
         <AuthProvider>
-          <RegisterSW />
-          <Navbar />
-          <main className="flex-1">{children}</main>
-          <Footer />
+          <ThemeProvider>
+            <Navbar />
+            <div className="min-h-screen bg-[var(--background)] text-[var(--text-primary)] transition-colors duration-300">
+              {children}
+            </div>
+            <Footer />
+          </ThemeProvider>
         </AuthProvider>
       </body>
     </html>

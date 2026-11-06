@@ -15,6 +15,7 @@ function formatViewingDate(isoDate: string): string {
 }
 
 type Filter = "all" | "favorites" | CollectionStatus;
+type SortOrder = "title-asc" | "newest" | "recently-watched";
 
 async function callApi<T>(url: string, method = "GET", body?: unknown): Promise<T> {
   const response = await fetch(url, {
@@ -31,6 +32,8 @@ async function callApi<T>(url: string, method = "GET", body?: unknown): Promise<
 export default function CollectionPage() {
   const [items, setItems] = useState<CollectionMovieDto[]>([]);
   const [filter, setFilter] = useState<Filter>("all");
+  const [search, setSearch] = useState("");
+  const [sortOrder, setSortOrder] = useState<SortOrder>("newest");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [busyItemId, setBusyItemId] = useState<string | null>(null);
@@ -125,6 +128,19 @@ export default function CollectionPage() {
   }
 
   const buttonClass = (active: boolean) => `rounded-full px-4 py-2 text-sm font-medium transition ${active ? "bg-blue-600 text-white" : "bg-slate-900 text-slate-300 hover:bg-slate-800"}`;
+  const normalizedSearch = search.trim().toLocaleLowerCase("fr");
+  const visibleItems = items
+    .filter((item) => item.title.toLocaleLowerCase("fr").includes(normalizedSearch))
+    .slice()
+    .sort((left, right) => {
+      if (sortOrder === "title-asc") return left.title.localeCompare(right.title, "fr", { sensitivity: "base" });
+      if (sortOrder === "recently-watched") {
+        const leftDate = left.lastWatchedAt ? Date.parse(left.lastWatchedAt) : 0;
+        const rightDate = right.lastWatchedAt ? Date.parse(right.lastWatchedAt) : 0;
+        return rightDate - leftDate || right.createdAt.localeCompare(left.createdAt);
+      }
+      return right.createdAt.localeCompare(left.createdAt);
+    });
 
   return (
     <div className="min-h-screen bg-slate-950 text-white">
@@ -143,17 +159,47 @@ export default function CollectionPage() {
           ))}
         </nav>
 
+        <section className="grid gap-3 rounded-xl border border-slate-800 bg-slate-900/70 p-3 sm:grid-cols-[minmax(0,1fr)_14rem] sm:p-4" aria-label="Rechercher et trier la collection">
+          <div>
+            <label htmlFor="collection-search" className="mb-1 block text-sm font-medium text-slate-300">Rechercher un film</label>
+            <div className="flex gap-2">
+              <input
+                id="collection-search"
+                type="search"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Titre du film…"
+                className="min-w-0 flex-1 rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-white placeholder:text-slate-500 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+              />
+              {search && <button type="button" onClick={() => setSearch("")} className="rounded-md bg-slate-800 px-3 py-2 text-sm text-slate-200 hover:bg-slate-700">Effacer</button>}
+            </div>
+          </div>
+          <div>
+            <label htmlFor="collection-sort" className="mb-1 block text-sm font-medium text-slate-300">Trier par</label>
+            <select
+              id="collection-sort"
+              value={sortOrder}
+              onChange={(event) => setSortOrder(event.target.value as SortOrder)}
+              className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-white focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+            >
+              <option value="newest">Ajoutés récemment</option>
+              <option value="title-asc">Titre (A–Z)</option>
+              <option value="recently-watched">Vus récemment</option>
+            </select>
+          </div>
+        </section>
+
         {error && <p role="alert" className="rounded-lg border border-red-800 bg-red-950/50 p-3 text-sm text-red-200">{error} {error.includes("Connectez-vous") && <Link className="underline" href="/login">Se connecter</Link>}</p>}
-        {loading ? <p className="py-10 text-center text-slate-400">Chargement de votre collection…</p> : !error && items.length === 0 ? (
+        {loading ? <p className="py-10 text-center text-slate-400">Chargement de votre collection…</p> : !error && visibleItems.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-slate-700 bg-slate-900/40 px-6 py-14 text-center">
             <p className="text-4xl" aria-hidden="true">🎞️</p>
-            <h2 className="mt-4 text-xl font-semibold">Cette sélection est vide</h2>
-            <p className="mx-auto mt-2 max-w-md text-slate-400">Parcourez le catalogue pour ajouter un film à vos favoris ou à votre suivi.</p>
-            <Link href="/discover" className="mt-6 inline-flex rounded-lg bg-blue-600 px-5 py-3 font-semibold hover:bg-blue-500">Découvrir des films</Link>
+            <h2 className="mt-4 text-xl font-semibold">{items.length > 0 ? "Aucun film trouvé" : "Cette sélection est vide"}</h2>
+            <p className="mx-auto mt-2 max-w-md text-slate-400">{items.length > 0 ? "Essayez un autre titre ou effacez votre recherche." : "Parcourez le catalogue pour ajouter un film à vos favoris ou à votre suivi."}</p>
+            {items.length > 0 && search ? <button type="button" onClick={() => setSearch("")} className="mt-6 rounded-lg bg-blue-600 px-5 py-3 font-semibold hover:bg-blue-500">Effacer la recherche</button> : <Link href="/discover" className="mt-6 inline-flex rounded-lg bg-blue-600 px-5 py-3 font-semibold hover:bg-blue-500">Découvrir des films</Link>}
           </div>
         ) : (
           <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-            {items.map((item) => (
+            {visibleItems.map((item) => (
               <li key={item.id} className="flex flex-col overflow-hidden rounded-xl border border-slate-800 bg-slate-900">
                 {item.posterUrl ? <img src={item.posterUrl} alt={`Affiche du film ${item.title}`} loading="lazy" className="aspect-[2/3] w-full object-cover" /> : <div className="grid aspect-[2/3] place-items-center bg-slate-800 text-slate-500">Pas d’affiche</div>}
                 <div className="flex flex-1 flex-col gap-3 p-3">

@@ -5,6 +5,7 @@ import CustomList, { type CustomListDoc } from "./customList.model";
 import { getList } from "./customList.service";
 import { buildSignals, rankCandidates, toRecommendedMovie, type CandidateGroup, type SignalMovie } from "./ranking";
 import type { RecommendationsResponse } from "./types";
+import { ApiError, MOVIES_UNAVAILABLE } from "./errors";
 
 /**
  * Films « signaux » de l'utilisateur :
@@ -102,14 +103,23 @@ export async function getTrending(limit: number): Promise<RecommendationsRespons
   return trending(limit);
 }
 
+// Appel TMDB indispensable : s'il échoue, 503 avec un message clair (et le détail dans le terminal)
+async function tmdbRequired<T>(path: string): Promise<T> {
+  try {
+    return await tmdbFetch<T>(path);
+  } catch (err) {
+    throw new ApiError(503, MOVIES_UNAVAILABLE, { cause: err });
+  }
+}
+
 async function trending(limit: number): Promise<RecommendationsResponse> {
-  const movies = await tmdbFetch<TmdbPage<TmdbMovie>>("/trending/movie/week");
+  const movies = await tmdbRequired<TmdbPage<TmdbMovie>>("/trending/movie/week");
   return { source: "trending", results: movies.results.slice(0, limit).map((m) => toRecommendedMovie(m, "Tendance cette semaine")) };
 }
 
 /** Films similaires à un film (page détail). */
 export async function getSimilarMovies(movieId: number, limit: number): Promise<RecommendationsResponse> {
-  const data = await tmdbFetch<TmdbPage<TmdbMovie>>(`/movie/${movieId}/recommendations`);
+  const data = await tmdbRequired<TmdbPage<TmdbMovie>>(`/movie/${movieId}/recommendations`);
   return { source: "similar", results: data.results.slice(0, limit).map((m) => toRecommendedMovie(m, null)) };
 }
 

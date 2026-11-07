@@ -41,7 +41,7 @@ Variables : `MONGODB_URI`, `AUTH_SECRET`, `TMDB_API_KEY`.
 ## Endpoints
 
 Toutes les erreurs ont le format `{ "error": "message" }`.
-Codes communs : `400` entrée invalide · `401` non connecté · `403` interdit · `404` introuvable · `409` doublon/limite · `500` erreur serveur.
+Codes communs : `400` entrée invalide · `401` non connecté · `403` interdit · `404` introuvable · `409` doublon/limite · `500` erreur serveur · `503` service externe injoignable (MongoDB ou TMDB : « … ne répond pas. Vérifiez votre connexion internet puis réessayez. »).
 
 ### GET /api/lists
 - Auth : **requise**.

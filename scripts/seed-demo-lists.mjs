@@ -35,7 +35,7 @@ const DEMO_LISTS = [
   },
   {
     name: "À voir ce week-end",
-    description: "Liste vide pour montrer l’état vide et les suggestions.",
+    description: "Les films que je veux regarder bientôt.",
     visibility: "private",
     movieIds: [],
   },

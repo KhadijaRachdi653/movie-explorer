@@ -16,10 +16,9 @@ export default function ListCover({ list }: { list: CustomListDTO }) {
 
   if (posters.length === 0) {
     return (
-      <div className="flex aspect-[16/10] items-center justify-center bg-[radial-gradient(ellipse_at_top,var(--raised),var(--deep)_70%)]">
-        <span aria-hidden className="text-7xl font-extrabold text-transparent" style={{ WebkitTextStroke: "1.5px var(--marquee)" }}>
-          {list.name.charAt(0).toUpperCase()}
-        </span>
+      <div className="flex aspect-[16/10] flex-col items-center justify-center gap-3 bg-[radial-gradient(ellipse_at_top,var(--raised),var(--deep)_70%)] text-center">
+        <span aria-hidden className="flex size-12 items-center justify-center rounded-full border border-[var(--marquee)]/60 text-2xl text-[var(--marquee)]">+</span>
+        <span className="text-sm text-[var(--mist)]">Ajoutez vos premiers films</span>
       </div>
     );
   }

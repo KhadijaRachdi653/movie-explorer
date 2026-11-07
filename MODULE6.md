@@ -157,6 +157,7 @@ await api("/api/lists/ID", "DELETE");                                       // 2
 - Retirer un film affiche une notification avec « Annuler ».
 - Tri des films d'une liste : ajout récent, ajout ancien, titre.
 - Mobile : barre de navigation en bas, fenêtres en panneau depuis le bas de l'écran.
+- Carte « Mes favoris » dans `/lists` (lecture seule) : lit `GET /api/collection?favorite=true` (Module 4) et mène vers `/collection`. Masquée tant que le Module 4 n'est pas fusionné (404).
 - Hors ligne : si les listes ne peuvent pas être chargées, un message clair et un bouton « Réessayer » s'affichent (jamais une fausse liste vide).
 - Accessibilité : lien « Aller au contenu », focus clavier visible, fenêtres natives `<dialog>`, libellés sur tous les boutons d'icône.
 

@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import type { CustomListDTO } from "@/modules/recommendations/types";
 import AddMoviesDialog from "./AddMoviesDialog";
+import FavoritesCard from "./FavoritesCard";
 import ListCover from "./ListCover";
 import ListFormDialog from "./ListFormDialog";
 import SignInPrompt from "./SignInPrompt";
@@ -149,6 +150,8 @@ export default function ListsView() {
                     </button>
                   </li>
                 )}
+                {/* Favoris (Module 4) : seulement sans filtre ni recherche, car ce n'est pas une liste */}
+                {filter === "all" && !query.trim() && <FavoritesCard />}
                 {visible.map((l) => <ListCard key={l.id} list={l} />)}
               </ul>
             )}

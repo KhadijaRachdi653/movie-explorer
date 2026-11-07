@@ -23,16 +23,22 @@ export default function ListCover({ list }: { list: CustomListDTO }) {
     );
   }
 
+  return <PosterFan urls={posters.map((m) => `${TMDB_POSTER}${m.posterPath}`)} />;
+}
+
+// Affiches en éventail sur un fond flouté (listes et favoris)
+export function PosterFan({ urls }: { urls: string[] }) {
+  const shown = urls.slice(0, 3);
   return (
     <div className="relative aspect-[16/10] overflow-hidden bg-[var(--deep)]">
-      <img src={`${TMDB_POSTER}${posters[0].posterPath}`} alt="" className="absolute inset-0 size-full scale-125 object-cover opacity-30 blur-2xl" />
+      <img src={shown[0]} alt="" className="absolute inset-0 size-full scale-125 object-cover opacity-30 blur-2xl" />
       <div className="absolute inset-0 bg-gradient-to-t from-[var(--deep)] to-transparent" />
-      {posters.map((m, i) => (
+      {shown.map((url, i) => (
         <img
-          key={m.movieId}
-          src={`${TMDB_POSTER}${m.posterPath}`}
+          key={url}
+          src={url}
           alt=""
-          className={`absolute left-1/2 top-[12%] h-[80%] rounded-md shadow-2xl shadow-black/60 ring-1 ring-white/10 transition-transform duration-300 ${posters.length === 2 ? FAN_PAIR[i] : FAN[i]}`}
+          className={`absolute left-1/2 top-[12%] h-[80%] rounded-md shadow-2xl shadow-black/60 ring-1 ring-white/10 transition-transform duration-300 ${shown.length === 2 ? FAN_PAIR[i] : FAN[i]}`}
         />
       ))}
     </div>

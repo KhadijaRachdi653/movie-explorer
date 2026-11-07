@@ -41,13 +41,13 @@ export default function Hero({ movies, loading }: { movies: CardMovie[]; loading
     return () => clearInterval(timer);
   }, [autoplay, count]);
 
-  if (loading) return <div className="skeleton h-[78vh] min-h-[480px] w-full" aria-hidden />;
+  if (loading) return <div className="skeleton min-h-[max(78vh,520px)] w-full" aria-hidden />;
   if (count === 0) return null;
   const current = movies[index % count];
 
   return (
     <section
-      className="relative isolate flex h-[78vh] min-h-[480px] items-end overflow-hidden"
+      className="relative isolate flex min-h-[max(78vh,520px)] items-end overflow-hidden pt-28"
       aria-roledescription="carrousel"
       aria-label="Films à la une"
       onMouseEnter={() => setHovered(true)}
@@ -72,7 +72,14 @@ export default function Hero({ movies, loading }: { movies: CardMovie[]; loading
       <div className="hero-shade absolute inset-0 -z-10" />
 
       <div key={current.movieId} className="hero-text w-full max-w-3xl px-4 pb-20 sm:px-8 sm:pb-24" aria-roledescription="diapositive" aria-label={`${(index % count) + 1} sur ${count}`}>
-        <h1 className="text-[clamp(2.6rem,7.5vw,6rem)] font-extrabold leading-[0.9] tracking-[-0.035em]">{current.title}</h1>
+        {/* Titres longs plus petits : la bannière ne doit jamais passer sous la navigation */}
+        <h1
+          className={`text-balance font-extrabold leading-[0.92] tracking-[-0.035em] ${
+            current.title.length > 20 ? "text-[clamp(2.2rem,5vw,4.25rem)]" : "text-[clamp(2.6rem,7vw,5.75rem)]"
+          }`}
+        >
+          {current.title}
+        </h1>
         <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-[var(--mist)]">
           {current.match ? <span className="font-bold text-[var(--marquee)]">{current.match} % pour vous</span> : null}
           {current.year ? <span>{current.year}</span> : null}

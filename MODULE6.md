@@ -166,9 +166,10 @@ Le service worker mettait en cache **toutes** les requêtes GET, y compris `/api
 ## Données de démonstration (examen)
 
 ```bash
-npm run seed:demo -- --email ton@email.tn         # aperçu : n'écrit rien
-npm run seed:demo -- --email ton@email.tn --yes   # supprime TES listes et crée les listes de démo
+node scripts/seed-demo-lists.mjs --email ton@email.tn         # aperçu : n'écrit rien
+node scripts/seed-demo-lists.mjs --email ton@email.tn --yes   # supprime TES listes et crée les listes de démo
 ```
+Lancer avec `node`, pas `npm run` : sous PowerShell, npm retire les options `--email` et `--yes`.
 - Ne touche qu'aux listes de l'utilisateur indiqué (la base est partagée par l'équipe).
 - Titres français, affiches et genres récupérés sur TMDB au moment de l'exécution.
 - 5 listes : « Mes films préférés » (publique, 6 films), « Soirées en famille » (privée, 7), « Grands classiques » (publique, 5), « Soirée romantique » (privée, 5), « À voir ce week-end » (vide, pour montrer l'état vide).

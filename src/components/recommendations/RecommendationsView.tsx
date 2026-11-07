@@ -80,7 +80,7 @@ export default function RecommendationsView() {
         </aside>
       )}
 
-      <div className={`space-y-10 pb-20 ${isPersonal ? "relative -mt-10" : ""}`}>
+      <div className={`space-y-10 pb-20 ${isPersonal ? "relative sm:-mt-10" : ""}`}>
         {personal.loading ? (
           <MovieRow title="Chargement des recommandations" movies={[]} loading />
         ) : (

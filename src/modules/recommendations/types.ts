@@ -32,10 +32,12 @@ export interface RecommendedMovie {
   title: string;
   overview: string;
   posterUrl: string | null;
+  backdropUrl: string | null; // grande image de fond (bannière)
   releaseDate: string | null;
   rating: number;
   genreIds: number[];
   reason: string | null; // ex. « Parce que vous avez ajouté Fight Club »
+  match: number | null; // compatibilité 55–99 % (recommandations personnalisées uniquement)
 }
 
 export interface RecommendationsResponse {

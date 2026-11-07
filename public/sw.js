@@ -1,4 +1,4 @@
-const CACHE_NAME = "movie-explorer-v1";
+const CACHE_NAME = "movie-explorer-v2"; // v2 : purge des réponses /api/ mises en cache par erreur
 const OFFLINE_URL = "/offline";
 
 const PRECACHE_ASSETS = [
@@ -43,7 +43,7 @@ self.addEventListener("fetch", (event) => {
     request.url.includes("_next/webpack") ||
     request.url.includes("hot-update") ||
     request.url.includes("_next/hmr") ||
-    request.url.includes("/api/auth") || // Évite de mettre en cache les sessions d'authentification
+    request.url.includes("/api/") || // Jamais de cache pour l'API : données personnelles et toujours à jour
     request.url.startsWith("ws:") ||
     request.url.startsWith("wss:")
   ) {

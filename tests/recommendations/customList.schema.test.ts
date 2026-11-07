@@ -59,3 +59,11 @@ describe("recommandations par liste", () => {
     expect(recommendationsQuerySchema.safeParse({ listId: "1400940" }).success).toBe(false);
   });
 });
+
+describe("paramètre trending", () => {
+  it("true ou 1 active les tendances, sinon false", () => {
+    expect(recommendationsQuerySchema.parse({ trending: "true" }).trending).toBe(true);
+    expect(recommendationsQuerySchema.parse({ trending: "1" }).trending).toBe(true);
+    expect(recommendationsQuerySchema.parse({}).trending).toBe(false);
+  });
+});

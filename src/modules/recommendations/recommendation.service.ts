@@ -1,3 +1,4 @@
+import mongoose, { Types } from "mongoose";
 import dbConnect from "@/lib/mongodb";
 import { tmdbFetch, type TmdbMovie, type TmdbPage } from "@/lib/tmdb";
 import CustomList, { type CustomListDoc } from "./customList.model";
@@ -6,15 +7,84 @@ import { buildSignals, rankCandidates, toRecommendedMovie, type CandidateGroup, 
 import type { RecommendationsResponse } from "./types";
 
 /**
- * Récupère les films « signaux » de l'utilisateur.
- * Aujourd'hui : films de ses listes personnalisées.
- * Point d'intégration : ajouter ici les favoris (Module 4) et les films bien notés (Module 3)
- * au même format SignalMovie.
+ * Films « signaux » de l'utilisateur :
+ * - les films de ses listes personnalisées (Module 6) ;
+ * - ses favoris (Module 4, collection `collectionItems`, `favorite: true`) ;
+ * - les films qu'il a bien notés (Module 3, collection `ratings`, note ≥ 4/5).
+ * Favoris et notes sont lus directement en base pour ne pas dépendre du code des autres modules :
+ * tant qu'ils ne sont pas fusionnés, les collections sont vides et rien ne change.
  */
-async function getUserSignalMovies(userId: string): Promise<SignalMovie[]> {
+async function getUserSignalMovies(userId: string): Promise<{ movies: SignalMovie[]; alreadySeen: number[] }> {
   await dbConnect();
   const lists = await CustomList.find({ userId }, "movies").lean<Pick<CustomListDoc, "movies">[]>();
-  return lists.flatMap((l) => l.movies.map((m) => ({ movieId: m.movieId, title: m.title, genreIds: m.genreIds ?? [], addedAt: m.addedAt })));
+  const fromLists = lists.flatMap((l) =>
+    l.movies.map((m) => ({ movieId: m.movieId, title: m.title, genreIds: m.genreIds ?? [], addedAt: m.addedAt }))
+  );
+  const [favorites, rated] = await Promise.all([getFavoriteSignalMovies(userId), getRatedMovies(userId)]);
+  // Films déjà notés (même mal) : déjà vus, donc jamais recommandés
+  return { movies: [...fromLists, ...favorites, ...rated.liked], alreadySeen: rated.ratedIds };
+}
+
+export const RATING_LIKED_MIN = 4; // note sur 5 à partir de laquelle un film est « aimé »
+
+interface RatingDoc {
+  movieId?: number;
+  score?: number;
+  updatedAt?: Date;
+}
+
+/** Notes de l'utilisateur : films aimés (signaux) et tous les films notés (déjà vus, à exclure). */
+async function getRatedMovies(userId: string): Promise<{ liked: SignalMovie[]; ratedIds: number[] }> {
+  const db = mongoose.connection.db;
+  if (!db || !Types.ObjectId.isValid(userId)) return { liked: [], ratedIds: [] };
+  try {
+    const ratings = await db
+      .collection<RatingDoc>("ratings")
+      .find({ userId: new Types.ObjectId(userId) }, { projection: { movieId: 1, score: 1, updatedAt: 1 } })
+      .sort({ updatedAt: -1 })
+      .limit(200)
+      .toArray();
+    const valid = ratings.filter((r) => typeof r.movieId === "number" && typeof r.score === "number");
+    return {
+      // titre inconnu (non stocké par le Module 3) : "" donne la raison « D'après les films que vous avez bien notés »
+      liked: valid
+        .filter((r) => r.score! >= RATING_LIKED_MIN)
+        .map((r) => ({ movieId: r.movieId!, title: "", genreIds: [], addedAt: r.updatedAt ?? new Date(0) })),
+      ratedIds: valid.map((r) => r.movieId!),
+    };
+  } catch (err) {
+    console.error("Lecture des notes impossible :", err);
+    return { liked: [], ratedIds: [] };
+  }
+}
+
+interface FavoriteItem {
+  movie?: { movieId?: number; title?: string; genreIds?: number[] };
+  updatedAt?: Date;
+}
+
+async function getFavoriteSignalMovies(userId: string): Promise<SignalMovie[]> {
+  const db = mongoose.connection.db;
+  if (!db || !Types.ObjectId.isValid(userId)) return [];
+  try {
+    const items = await db
+      .collection<FavoriteItem>("collectionItems")
+      .find({ userId: new Types.ObjectId(userId), favorite: true }, { projection: { movie: 1, updatedAt: 1 } })
+      .sort({ updatedAt: -1 })
+      .limit(50)
+      .toArray();
+    return items
+      .filter((i) => typeof i.movie?.movieId === "number" && typeof i.movie?.title === "string")
+      .map((i) => ({
+        movieId: i.movie!.movieId!,
+        title: i.movie!.title!,
+        genreIds: i.movie!.genreIds ?? [],
+        addedAt: i.updatedAt ?? new Date(0),
+      }));
+  } catch (err) {
+    console.error("Lecture des favoris impossible :", err);
+    return []; // les favoris améliorent les recommandations mais ne doivent jamais les bloquer
+  }
 }
 
 async function fetchPage(path: string, params: Record<string, string | number> = {}): Promise<TmdbMovie[]> {
@@ -25,6 +95,11 @@ async function fetchPage(path: string, params: Record<string, string | number> =
     console.error(`Erreur TMDB ${path} :`, err);
     return []; // un appel en échec ne bloque pas les autres
   }
+}
+
+/** Tendances de la semaine (rangée « Tendances » et repli sans signal). */
+export async function getTrending(limit: number): Promise<RecommendationsResponse> {
+  return trending(limit);
 }
 
 async function trending(limit: number): Promise<RecommendationsResponse> {
@@ -44,15 +119,16 @@ export async function getSimilarMovies(movieId: number, limit: number): Promise<
  */
 export async function getPersonalRecommendations(userId: string | null, limit: number, listId?: string): Promise<RecommendationsResponse> {
   let signalMovies: SignalMovie[];
+  let alreadySeen: number[] = [];
   if (listId) {
     const list = await getList(listId, userId);
     signalMovies = list.movies;
   } else {
     if (!userId) return trending(limit);
-    signalMovies = await getUserSignalMovies(userId);
+    ({ movies: signalMovies, alreadySeen } = await getUserSignalMovies(userId));
   }
 
-  const signals = buildSignals(signalMovies);
+  const signals = buildSignals(signalMovies, alreadySeen);
   if (signals.seeds.length === 0) return trending(limit);
 
   const groups: CandidateGroup[] = await Promise.all(

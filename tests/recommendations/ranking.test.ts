@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildSignals, rankCandidates, SEED_COUNT, type CandidateGroup } from "@/modules/recommendations/ranking";
+import { buildSignals, rankCandidates, SEED_COUNT, toMatchPercent, type CandidateGroup } from "@/modules/recommendations/ranking";
 import type { TmdbMovie } from "@/lib/tmdb";
 
 const movie = (id: number, genre_ids: number[] = [], vote_average = 5): TmdbMovie => ({
@@ -65,5 +65,45 @@ describe("rankCandidates", () => {
     const result = rankCandidates(groups, signals, 10);
     expect(result.find((m) => m.movieId === 10)?.reason).toBe("Parce que vous avez ajouté Fight Club");
     expect(result.find((m) => m.movieId === 20)?.reason).toBe("Dans vos genres préférés");
+  });
+});
+
+describe("toMatchPercent", () => {
+  const signals = { seeds: [{ movieId: 1, title: "A" }, { movieId: 2, title: "B" }], topGenres: [18, 28] };
+
+  it("reste entre 55 et 99 %", () => {
+    expect(toMatchPercent(0, signals)).toBe(55);
+    expect(toMatchPercent(1000, signals)).toBe(99);
+  });
+  it("augmente avec le score", () => {
+    expect(toMatchPercent(5, signals)).toBeGreaterThan(toMatchPercent(2, signals));
+  });
+  it("un film recommandé par tous les films de départ, dans tous les genres préférés et noté 10 vaut 99 %", () => {
+    expect(toMatchPercent(2 * 2 + 2 + 1, signals)).toBe(99);
+  });
+  it("est renvoyé avec chaque recommandation personnalisée", () => {
+    const groups: CandidateGroup[] = [{ seedTitle: "A", movies: [movie(10, [18], 8)] }];
+    const [m] = rankCandidates(groups, { ...signals, excludeIds: new Set() }, 5);
+    expect(m.match).toBeGreaterThanOrEqual(55);
+    expect(m.match).toBeLessThanOrEqual(99);
+  });
+});
+
+describe("notes (Module 3)", () => {
+  it("exclut les films déjà notés sans en faire des signaux", () => {
+    const s = buildSignals([{ movieId: 1, title: "A", genreIds: [18], addedAt: "2026-01-01" }], [50, 51]);
+    expect(s.seeds.map((x) => x.movieId)).toEqual([1]);
+    expect(s.excludeIds.has(50)).toBe(true);
+    expect(s.excludeIds.has(51)).toBe(true);
+  });
+  it("un film bien noté (titre inconnu) donne la raison « D'après les films que vous avez bien notés »", () => {
+    const signals = { seeds: [], topGenres: [], excludeIds: new Set<number>() };
+    const [m] = rankCandidates([{ seedTitle: "", movies: [movie(10)] }], signals, 5);
+    expect(m.reason).toBe("D’après les films que vous avez bien notés");
+  });
+  it("un film venant d'un film de départ garde cette raison même s'il était déjà proposé par genre", () => {
+    const signals = { seeds: [], topGenres: [], excludeIds: new Set<number>() };
+    const [m] = rankCandidates([{ seedTitle: null, movies: [movie(10)] }, { seedTitle: "Fight Club", movies: [movie(10)] }], signals, 5);
+    expect(m.reason).toBe("Parce que vous avez ajouté Fight Club");
   });
 });

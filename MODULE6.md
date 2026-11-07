@@ -82,10 +82,11 @@ Codes communs : `400` entrée invalide · `401` non connecté · `403` interdit 
 - Réponse `200` : `CustomList` mise à jour.
 - Erreurs : `400` · `401` · `403` · `404` liste ou film absent.
 
-### GET /api/recommendations?movieId=&limit=
+### GET /api/recommendations?trending=&listId=&movieId=&limit=
 - Auth : facultative.
-- Paramètres : `movieId` (entier, facultatif) · `limit` (1–40, défaut 20).
-- Réponse `200` : `{ "source": "personal" | "similar" | "trending", "results": [RecommendedMovie, ...] }`
+- Paramètres : `trending` (`true` pour les tendances de la semaine, facultatif) · `listId` (id MongoDB, facultatif) · `movieId` (entier, facultatif) · `limit` (1–40, défaut 20).
+- Réponse `200` : `{ "source": "list" | "personal" | "similar" | "trending", "results": [RecommendedMovie, ...] }`
+  - avec `listId` → recommandations basées uniquement sur cette liste (`list`) ; mêmes droits que la lecture de la liste (`403` / `404`) ;
   - avec `movieId` → films similaires (`similar`) ;
   - sans `movieId`, connecté avec des films en liste → recommandations personnalisées (`personal`) ;
   - sinon → tendances de la semaine (`trending`).
@@ -101,7 +102,8 @@ Codes communs : `400` entrée invalide · `401` non connecté · `403` interdit 
 
 // RecommendedMovie
 { "movieId": 807, "title": "Seven", "overview": "...", "posterUrl": "https://image.tmdb.org/t/p/w500/...",
-  "releaseDate": "1995-09-22", "rating": 8.4, "genreIds": [80, 9648], "reason": "Parce que vous avez ajouté Fight Club" }
+  "backdropUrl": "https://image.tmdb.org/t/p/w1280/...", "releaseDate": "1995-09-22", "rating": 8.4, "genreIds": [80, 9648],
+  "reason": "Parce que vous avez ajouté Fight Club", "match": 94 }
 ```
 
 ## Logique de recommandation
@@ -110,8 +112,10 @@ Codes communs : `400` entrée invalide · `401` non connecté · `403` interdit 
 2. **Candidats** : recommandations TMDB de chaque film de départ + films populaires des genres préférés.
 3. **Score** = 2 × (nb de films de départ qui le recommandent) + 1 × (nb de genres préférés partagés) + note TMDB / 10.
 4. Films déjà en liste exclus ; repli sur les tendances si aucun signal.
+5. **Compatibilité** (`match`) : le score est converti en pourcentage de 55 à 99 % (`toMatchPercent`), 99 % correspondant au score maximal possible (tous les films de départ le recommandent, tous les genres préférés, note 10/10). `null` pour les tendances et les films similaires.
 
-**Intégration prévue** : favoris (Module 4) et films bien notés (Module 3) s'ajoutent dans `getUserSignalMovies()` (`recommendation.service.ts`) au format `SignalMovie`, sans autre changement.
+**Favoris (Module 4)** : `getUserSignalMovies()` lit aussi les favoris de l'utilisateur directement en base (collection `collectionItems`, `favorite: true`, champs `movie.movieId/title/genreIds`), sans dépendre du code du Module 4. Tant que ce module n'est pas fusionné, la collection est vide et rien ne change. Ils ne sont utilisés que pour les recommandations globales (sans `listId`).
+**Notes (Module 3)** : `getUserSignalMovies()` lit aussi la collection `ratings` (`userId`, `movieId`, `score` de 1 à 5), directement en base. Un film noté **4 ou 5** devient un signal (raison : « D'après les films que vous avez bien notés », titre non stocké par le Module 3). **Tout film déjà noté**, même mal, est exclu des recommandations : l'utilisateur l'a déjà vu. Uniquement pour les recommandations globales (sans `listId`).
 
 ## Tests
 
@@ -138,3 +142,23 @@ await api("/api/lists/ID", "PATCH", { name: "Top films", visibility: "public" })
 await api("/api/lists/ID/movies/550", "DELETE");                            // 200
 await api("/api/lists/ID", "DELETE");                                       // 200
 ```
+
+## Interface
+
+| Page | Contenu |
+|---|---|
+| `/recommendations` | Bannière du film n°1 (compatibilité + genres), Top 10 pour vous, rangées par genre, « Inspiré de votre liste », tendances de la semaine |
+| `/lists` | Mes listes (couverture en mosaïque, visibilité), création |
+| `/lists/[id]` | Détail : ajouter des films (recherche + suggestions), modifier, partager, supprimer ; lecture seule pour la liste publique d'un autre utilisateur |
+
+- Code : `src/app/(streaming)/` (pages + thème `streaming.css`) et `src/components/recommendations/`.
+- Ajout d'un film : bouton + sur chaque affiche, ou fenêtre « Ajouter des films ». La recherche utilise `GET /api/search` (Module 5) ; tant qu'il n'est pas fusionné, seules les suggestions s'affichent.
+- Bannière en carrousel (5 films, fondu) : pause au survol et au focus, bouton pause, désactivée si l'utilisateur a demandé à réduire les animations.
+- Retirer un film affiche une notification avec « Annuler ».
+- Tri des films d'une liste : ajout récent, ajout ancien, titre.
+- Mobile : barre de navigation en bas, fenêtres en panneau depuis le bas de l'écran.
+- Hors ligne : si les listes ne peuvent pas être chargées, un message clair et un bouton « Réessayer » s'affichent (jamais une fausse liste vide).
+- Accessibilité : lien « Aller au contenu », focus clavier visible, fenêtres natives `<dialog>`, libellés sur tous les boutons d'icône.
+
+## Correctif partagé : service worker (`public/sw.js`)
+Le service worker mettait en cache **toutes** les requêtes GET, y compris `/api/...`, et servait la version en cache en premier : une liste modifiée pouvait s'afficher dans son ancien état. Correctif : `/api/` n'est plus jamais mis en cache (cahier des charges : pas de données personnelles en cache), et le cache passe en `v2` pour purger les anciennes réponses.

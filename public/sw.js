@@ -1,4 +1,4 @@
-const CACHE_NAME = "movie-explorer-v1";
+const CACHE_NAME = "movie-explorer-v4";
 const OFFLINE_URL = "/offline";
 
 // 💡 CORRECTION : On réduit les assets obligatoires à l'installation pour éviter le blocage 404 du dev
@@ -45,6 +45,12 @@ self.addEventListener("fetch", (event) => {
     request.url.includes("hmr") ||
     request.url.includes("hot-update") ||
     request.url.includes("/api/auth") ||
+    request.url.includes("/api/saved-searches") || // Données personnelles qui changent (CRUD) : jamais en cache
+    request.url.includes("/api/movies") ||
+    request.url.includes("/api/reviews") ||
+    request.url.includes("/api/ratings") ||
+    request.url.includes("/api/chat") ||
+    request.headers.get("RSC") ||
     request.url.startsWith("ws:") ||
     request.url.startsWith("wss:")
   ) {

@@ -1,44 +1,29 @@
-import { tmdbFetch, posterUrl, type TmdbMovie, type TmdbPage } from "@/lib/tmdb";
+import dbConnect from "@/lib/mongodb";
+import Movie, { type MovieDoc } from "@/modules/movies/movie.model";
 import type { SearchQuery } from "./discovery.schema";
 import type { DiscoveryMovie, Genre, SearchResponse, SortOption } from "./discovery.types";
 
-type TmdbMovieFull = TmdbMovie & { popularity?: number; vote_count?: number };
+const PAGE_SIZE = 20;
 
-// Correspondance tri app -> tri TMDB (/discover)
-const TMDB_SORT: Record<SortOption, string> = {
-  popularity: "popularity.desc",
-  rating: "vote_average.desc",
-  release_date: "primary_release_date.desc",
-  title: "title.asc",
+const SORT: Record<SortOption, Record<string, 1 | -1>> = {
+  popularity: { createdAt: -1 },
+  rating: { rating: -1 },
+  release_date: { year: -1 },
+  title: { title: 1 },
 };
 
-function toDiscoveryMovie(m: TmdbMovieFull): DiscoveryMovie {
+const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+function toDiscoveryMovie(m: MovieDoc): DiscoveryMovie {
   return {
-    movieId: m.id,
+    movieId: m._id.toString(),
     title: m.title,
     overview: m.overview ?? "",
-    posterUrl: posterUrl(m.poster_path),
-    releaseDate: m.release_date || null,
-    year: m.release_date ? Number(m.release_date.slice(0, 4)) : null,
-    rating: m.vote_average ?? 0,
-    voteCount: m.vote_count ?? 0,
-    genreIds: m.genre_ids ?? [],
+    posterUrl: m.posterUrl || null,
+    year: m.year ?? null,
+    rating: m.rating ?? 0,
+    genres: m.genres ?? [],
   };
-}
-
-// Tri local (utilisé en mode recherche par titre, que TMDB ne sait pas trier)
-function sortLocally(movies: TmdbMovieFull[], sortBy: SortOption): TmdbMovieFull[] {
-  const sorted = [...movies];
-  switch (sortBy) {
-    case "rating":
-      return sorted.sort((a, b) => b.vote_average - a.vote_average);
-    case "release_date":
-      return sorted.sort((a, b) => (b.release_date || "").localeCompare(a.release_date || ""));
-    case "title":
-      return sorted.sort((a, b) => a.title.localeCompare(b.title, "fr"));
-    default:
-      return sorted.sort((a, b) => (b.popularity ?? 0) - (a.popularity ?? 0));
-  }
 }
 
 function buildEmptyMessage(q: SearchQuery): string {
@@ -46,55 +31,42 @@ function buildEmptyMessage(q: SearchQuery): string {
   return "Aucun film ne correspond à ces filtres. Essayez d'élargir vos critères.";
 }
 
-/**
- * Recherche / découverte de films.
- * - Avec `query`  : TMDB /search/movie (titre + année), puis genre, note et tri appliqués sur la page reçue.
- * - Sans `query`  : TMDB /discover/movie (tous les filtres et le tri sont faits par TMDB).
- */
 export async function searchMovies(q: SearchQuery): Promise<SearchResponse> {
-  let data: TmdbPage<TmdbMovieFull>;
-  let movies: TmdbMovieFull[];
+  await dbConnect();
+  const filter: Record<string, unknown> = {};
+  if (q.query) filter.title = { $regex: escapeRegex(q.query), $options: "i" };
+  if (q.genre) filter.genres = q.genre;
+  if (q.year) filter.year = q.year;
+  if (q.minRating !== undefined) filter.rating = { $gte: q.minRating };
 
-  if (q.query) {
-    data = await tmdbFetch<TmdbPage<TmdbMovieFull>>("/search/movie", {
-      query: q.query,
-      page: q.page,
-      include_adult: "false",
-      ...(q.year && { primary_release_year: q.year }),
-    });
-    movies = data.results
-      .filter((m) => (q.genre ? m.genre_ids?.includes(q.genre) : true))
-      .filter((m) => (q.minRating !== undefined ? m.vote_average >= q.minRating : true));
-    movies = sortLocally(movies, q.sortBy);
-  } else {
-    data = await tmdbFetch<TmdbPage<TmdbMovieFull>>("/discover/movie", {
-      page: q.page,
-      include_adult: "false",
-      sort_by: TMDB_SORT[q.sortBy],
-      // évite les films notés 10/10 avec 1 seul vote quand on trie par note
-      ...(q.sortBy === "rating" && { "vote_count.gte": 100 }),
-      ...(q.genre && { with_genres: q.genre }),
-      ...(q.year && { primary_release_year: q.year }),
-      ...(q.minRating !== undefined && { "vote_average.gte": q.minRating }),
-    });
-    movies = data.results;
-  }
+  const [docs, total] = await Promise.all([
+    Movie.find(filter)
+      .sort(SORT[q.sortBy])
+      .collation({ locale: "fr" })
+      .skip((q.page - 1) * PAGE_SIZE)
+      .limit(PAGE_SIZE)
+      .lean<MovieDoc[]>(),
+    Movie.countDocuments(filter),
+  ]);
 
-  const results = movies.map(toDiscoveryMovie);
+  const results = docs.map(toDiscoveryMovie);
   const isEmpty = results.length === 0;
 
   return {
     results,
-    page: data.page,
-    totalPages: Math.min(data.total_pages, 500), // TMDB limite à 500 pages
-    totalResults: data.total_results,
+    page: q.page,
+    totalPages: Math.max(1, Math.ceil(total / PAGE_SIZE)),
+    totalResults: total,
     isEmpty,
     emptyMessage: isEmpty ? buildEmptyMessage(q) : null,
   };
 }
 
-// Liste des genres (pour remplir le filtre côté front)
 export async function getGenres(): Promise<Genre[]> {
-  const data = await tmdbFetch<{ genres: Genre[] }>("/genre/movie/list");
-  return data.genres;
+  await dbConnect();
+  const names: string[] = await Movie.distinct("genres");
+  return names
+    .filter(Boolean)
+    .sort((a, b) => a.localeCompare(b, "fr"))
+    .map((name) => ({ id: name, name }));
 }

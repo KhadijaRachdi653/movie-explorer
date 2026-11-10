@@ -10,14 +10,14 @@ type SortOption = "popularity" | "rating" | "release_date" | "title";
 
 interface Filters {
   query?: string;
-  genre?: number;
+  genre?: string;
   year?: number;
   minRating?: number;
   sortBy: SortOption;
 }
 
 interface Movie {
-  movieId: number;
+  movieId: string;
   title: string;
   overview: string;
   posterUrl: string | null;
@@ -41,7 +41,7 @@ interface SavedSearch {
 }
 
 interface Genre {
-  id: number;
+  id: string;
   name: string;
 }
 
@@ -59,7 +59,7 @@ type FormState = typeof EMPTY_FORM;
 function toFilters(f: FormState): Filters {
   return {
     ...(f.query.trim() && { query: f.query.trim() }),
-    ...(f.genre && { genre: Number(f.genre) }),
+    ...(f.genre && { genre: f.genre }),
     ...(f.year && { year: Number(f.year) }),
     ...(f.minRating && { minRating: Number(f.minRating) }),
     sortBy: f.sortBy,
@@ -79,7 +79,7 @@ function subscribeOnline(cb: () => void) {
 function toForm(f: Filters): FormState {
   return {
     query: f.query ?? "",
-    genre: f.genre ? String(f.genre) : "",
+    genre: f.genre ?? "",
     year: f.year ? String(f.year) : "",
     minRating: f.minRating !== undefined ? String(f.minRating) : "",
     sortBy: f.sortBy ?? "popularity",
@@ -117,7 +117,7 @@ export default function DiscoverPage() {
   const [editName, setEditName] = useState("");
   const [crudMsg, setCrudMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
 
-  const genreName = (id?: number) => genres.find((g) => g.id === id)?.name ?? `Genre ${id}`;
+  const genreName = (id?: string) => genres.find((g) => g.id === id)?.name ?? id;
 
   // ---- Recherche (GET /api/search) ----
   // fetchSearch ne modifie l'état qu'après la réponse ; runSearch affiche aussi le chargement
@@ -335,7 +335,8 @@ export default function DiscoverPage() {
               ) : (
                 <ul className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                   {data.results.map((m) => (
-                    <li key={m.movieId} className="rounded-lg overflow-hidden bg-slate-900 border border-slate-800 flex flex-col">
+                    <li key={m.movieId}>
+                      <Link href={`/movies/${m.movieId}`} className="rounded-lg overflow-hidden bg-slate-900 border border-slate-800 flex flex-col h-full transition hover:border-blue-500">
                       {m.posterUrl ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={m.posterUrl} alt={m.title} loading="lazy" className="aspect-[2/3] w-full object-cover" />
@@ -348,6 +349,7 @@ export default function DiscoverPage() {
                           {m.year ?? "—"} · ⭐ {m.rating.toFixed(1)}
                         </p>
                       </div>
+                      </Link>
                     </li>
                   ))}
                 </ul>

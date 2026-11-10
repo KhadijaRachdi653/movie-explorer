@@ -3,6 +3,7 @@ import Link from "next/link";
 
 export default async function HomePage() {
   const session = await auth();
+  const isAdmin = (session?.user as { role?: string } | undefined)?.role === "admin";
 
   const handleSignOut = async () => {
     "use server";
@@ -17,6 +18,14 @@ export default async function HomePage() {
         </div>
 
         <nav className="flex gap-4 items-center">
+          <Link href="/movies" className="text-sm text-slate-200 hover:text-white">
+            Catalogue
+          </Link>
+          {isAdmin && (
+            <Link href="/admin/movies" className="text-sm text-slate-200 hover:text-white">
+              Gérer les films
+            </Link>
+          )}
           {session ? (
             <>
               <span className="text-sm text-slate-400">
@@ -64,7 +73,13 @@ export default async function HomePage() {
             Trouvez les dernières sorties, organisez vos favoris et consultez les avis de la communauté.
           </p>
 
-          <div className="mt-8">
+          <div className="mt-8 flex flex-wrap justify-center gap-3">
+            <Link
+              href="/movies"
+              className="inline-block border border-slate-700 hover:border-blue-500 text-white font-semibold px-6 py-3 rounded-lg transition-colors"
+            >
+              🎞️ Voir le catalogue
+            </Link>
             <Link
               href="/discover"
               className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg transition-colors"

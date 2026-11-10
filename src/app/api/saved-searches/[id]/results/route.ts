@@ -8,7 +8,7 @@ type Context = { params: Promise<{ id: string }> };
 
 const pageSchema = z.coerce.number().int().min(1, "Page invalide.").max(500, "Page maximale : 500.").default(1);
 
-// GET /api/saved-searches/[id]/results?page= — relance la recherche enregistrée sur TMDB
+// GET /api/saved-searches/[id]/results?page= — relance la recherche enregistrée
 export async function GET(request: NextRequest, context: Context) {
   try {
     const userId = await requireUserId();

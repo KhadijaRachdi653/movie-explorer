@@ -75,14 +75,14 @@ export async function getSavedSearch(id: string, userId: string): Promise<SavedS
   return toDto(await findOwned(id, userId));
 }
 
-// R — relancer la recherche enregistrée sur TMDB
+// R — relancer la recherche enregistrée
 export async function runSavedSearch(id: string, userId: string, page: number): Promise<SearchResponse> {
   await dbConnect();
   const { filters } = await findOwned(id, userId);
   try {
     return await searchMovies({ ...filters, page });
   } catch (err) {
-    console.error("Erreur TMDB (recherche sauvegardée) :", err);
+    console.error("Erreur recherche sauvegardée :", err);
     throw new ApiError(502, "Le service de films est momentanément indisponible.");
   }
 }

@@ -6,7 +6,7 @@ export const MAX_SAVED_SEARCHES_PER_USER = 20;
 // Filtres enregistrés (mêmes critères que GET /api/search, sans la page)
 export interface SearchFiltersDoc {
   query?: string;
-  genre?: number;
+  genre?: string;
   year?: number;
   minRating?: number;
   sortBy: SortOption;
@@ -24,7 +24,7 @@ export interface SavedSearchDoc {
 const SearchFiltersSchema = new Schema<SearchFiltersDoc>(
   {
     query: { type: String, trim: true, maxlength: 100 },
-    genre: { type: Number, min: 1 },
+    genre: { type: String, trim: true, maxlength: 50 },
     year: { type: Number, min: 1900 },
     minRating: { type: Number, min: 0, max: 10 },
     sortBy: { type: String, enum: SORT_OPTIONS, default: "popularity" },

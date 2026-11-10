@@ -5,15 +5,13 @@ export type SortOption = (typeof SORT_OPTIONS)[number];
 
 // Film renvoyé au front (format simplifié et stable)
 export interface DiscoveryMovie {
-  movieId: number; // identifiant TMDB (≠ _id MongoDB)
+  movieId: string;
   title: string;
   overview: string;
   posterUrl: string | null;
-  releaseDate: string | null;
   year: number | null;
-  rating: number; // note moyenne TMDB /10
-  voteCount: number;
-  genreIds: number[];
+  rating: number;
+  genres: string[];
 }
 
 export interface SearchResponse {
@@ -26,6 +24,6 @@ export interface SearchResponse {
 }
 
 export interface Genre {
-  id: number;
+  id: string;
   name: string;
 }

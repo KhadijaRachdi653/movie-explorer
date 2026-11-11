@@ -1,12 +1,33 @@
 "use client";
 
-import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 type Message = { id: string; content: string; role: "user" | "assistant" };
 
-const STORAGE_KEY = "cinebot-messages";
+const STORAGE_KEY = "cinebot-conversation";
+
+type SavedConversation = { owner: string; messages: Message[] };
+
+function loadSaved(): SavedConversation | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return JSON.parse(sessionStorage.getItem(STORAGE_KEY) ?? "null") as SavedConversation | null;
+  } catch {
+    return null;
+  }
+}
+
+// E-mail du compte connecté, "" pour un visiteur, null si la session n'a pas pu être lue
+async function fetchSessionUser(): Promise<string | null> {
+  try {
+    const session = (await fetch("/api/auth/session").then((r) => r.json())) as { user?: { email?: string } } | null;
+    return session?.user?.email ?? "";
+  } catch {
+    return null;
+  }
+}
 const GENERAL_SUGGESTIONS = ["🎬 Un film pour ce soir ?", "⭐ Les mieux notés par la communauté", "🔎 Tu as des films de Nolan ?"];
 const MOVIE_SUGGESTIONS = ["💬 Que pensent les gens de ce film ?", "🎞️ Des films dans le même genre ?"];
 
@@ -37,22 +58,44 @@ export default function ChatBot() {
   const currentMovieId = pathname.match(/^\/movies\/([a-f\d]{24})/i)?.[1];
   const [isOpen, setIsOpen] = useState(false);
   // La conversation est conservée pendant la session de navigation
-  const [messages, setMessages] = useState<Message[]>(() =>
-    typeof window === "undefined" ? [] : (JSON.parse(sessionStorage.getItem(STORAGE_KEY) ?? "[]") as Message[])
-  );
+  const [messages, setMessages] = useState<Message[]>(() => loadSaved()?.messages ?? []);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const ownerRef = useRef<string | null>(null); // compte auquel appartient la conversation affichée
+
+  // La conversation appartient au compte connecté : après une déconnexion ou un changement de compte, CineBot repart de zéro
+  const syncOwner = useCallback(async (): Promise<boolean> => {
+    const user = await fetchSessionUser();
+    if (user === null) return false; // session illisible (hors ligne) : on ne touche à rien
+    const previous = ownerRef.current ?? loadSaved()?.owner ?? user;
+    ownerRef.current = user;
+    if (previous === user) return false;
+    sessionStorage.removeItem(STORAGE_KEY);
+    setMessages([]);
+    setInput("");
+    return true;
+  }, []);
 
   useEffect(() => {
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+    syncOwner().then((reset) => reset && setIsOpen(false));
+  }, [pathname, syncOwner]);
+
+  useEffect(() => {
+    if (ownerRef.current !== null) sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ owner: ownerRef.current, messages }));
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isOpen]);
 
+  async function open() {
+    await syncOwner();
+    setIsOpen(true);
+  }
+
   async function send(text: string) {
     if (!text.trim() || isLoading) return;
+    const history = (await syncOwner()) ? [] : messages;
     const userMessage: Message = { id: crypto.randomUUID(), content: text.trim(), role: "user" };
-    const updatedMessages = [...messages, userMessage];
+    const updatedMessages = [...history, userMessage];
     setMessages(updatedMessages);
     setInput("");
     setIsLoading(true);
@@ -198,7 +241,7 @@ export default function ChatBot() {
         </div>
       ) : (
         <button
-          onClick={() => setIsOpen(true)}
+          onClick={open}
           className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-r from-blue-600 to-blue-700 text-2xl shadow-lg shadow-black/40 transition-transform hover:scale-110"
           aria-label="Ouvrir CineBot"
         >

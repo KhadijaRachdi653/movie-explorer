@@ -40,7 +40,7 @@ export default async function MoviePage({
           <div>
             <h1 className="text-3xl font-bold">{movie.title}</h1>
             <p className="mt-1 text-slate-400">
-              {movie.year} · ★ {movie.rating.toFixed(1)}
+              {movie.year}
               {movie.director && ` · ${movie.director}`}
             </p>
             {community.count > 0 && (

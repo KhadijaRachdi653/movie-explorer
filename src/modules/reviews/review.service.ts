@@ -51,7 +51,7 @@ function toReviewDto(row: ReviewRow, viewerId?: string): ReviewDto {
     spoiler: row.spoiler ?? false,
     score: row.score ?? null,
     likeCount: row.likeCount,
-    likedByMe: !!viewerId && row.likes.some((u) => u.toString() === viewerId),
+    likedByMe: !!viewerId && (row.likes ?? []).some((u) => u.toString() === viewerId),
     isMine: authorId === viewerId,
     edited: row.updatedAt.getTime() - row.createdAt.getTime() > 1000,
     author: { id: authorId, name: row.author?.name ?? "Utilisateur supprimé", avatar: row.author?.avatar ?? "" },
@@ -69,7 +69,8 @@ const SORT_STAGE: Record<ReviewSort, Record<string, 1 | -1>> = {
 // Ajoute à chaque avis : nombre de likes, note de l'auteur et profil public de l'auteur
 function enrichStages(): PipelineStage.FacetPipelineStage[] {
   return [
-    { $addFields: { likeCount: { $size: "$likes" } } },
+    // likes absent sur les avis créés avant les likes : compté comme 0
+    { $addFields: { likeCount: { $size: { $ifNull: ["$likes", []] } } } },
     {
       $lookup: {
         from: Rating.collection.name,
@@ -262,13 +263,13 @@ export async function toggleLike(id: string, userId: string): Promise<{ liked: b
   const review = await Review.findById(id).lean<ReviewDoc>();
   if (!review) throw new ApiError(404, "Avis introuvable.");
   if (review.userId.toString() === userId) throw new ApiError(400, "Vous ne pouvez pas aimer votre propre avis.");
-  const liked = review.likes.some((u) => u.toString() === userId);
+  const liked = (review.likes ?? []).some((u) => u.toString() === userId);
   const updated = await Review.findByIdAndUpdate(
     id,
     liked ? { $pull: { likes: userId } } : { $addToSet: { likes: userId } },
     { new: true }
   ).lean<ReviewDoc>();
-  return { liked: !liked, likeCount: updated?.likes.length ?? 0 };
+  return { liked: !liked, likeCount: updated?.likes?.length ?? 0 };
 }
 
 // Signaler un avis inapproprié (une fois par utilisateur, pas le sien)
@@ -314,7 +315,7 @@ export async function listMyActivity(userId: string): Promise<MyActivityItem[]> 
       id: r._id.toString(),
       content: r.content,
       spoiler: r.spoiler ?? false,
-      likeCount: r.likes.length,
+      likeCount: r.likes?.length ?? 0,
     };
   }
   const movieIds = [...byMovie.keys()].filter((id) => Types.ObjectId.isValid(id));

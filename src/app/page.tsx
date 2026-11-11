@@ -21,6 +21,9 @@ export default async function HomePage() {
           <Link href="/movies" className="text-sm text-slate-200 hover:text-white">
             Catalogue
           </Link>
+          <Link href="/recommendations" className="text-sm text-slate-200 hover:text-white">
+            Pour vous
+          </Link>
           {isAdmin && (
             <Link href="/admin/movies" className="text-sm text-slate-200 hover:text-white">
               Gérer les films
@@ -34,6 +37,10 @@ export default async function HomePage() {
 
               <Link href="/profile/ratings" className="text-sm text-slate-200 hover:text-white">
                 Mes avis
+              </Link>
+
+              <Link href="/lists" className="text-sm text-slate-200 hover:text-white">
+                Mes listes
               </Link>
 
               <Link href="/profile" className="text-sm text-slate-200 hover:text-white underline">

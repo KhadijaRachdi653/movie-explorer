@@ -66,7 +66,7 @@ if (process.argv.includes("--remove")) {
     const credits = await tmdb(`/movie/${m.id}/credits`);
     const createdAt = new Date(now - i * 60_000); // ordre d'ajout stable dans le catalogue
     docs.push({
-      title: m.title.slice(0, 200),
+      title: m.title.replace(/[‎‏‪-‮]/g, "").trim().slice(0, 200), // sans marques de direction invisibles
       overview: m.overview,
       posterUrl: `${IMG}/w500${m.poster_path}`,
       year: Number(m.release_date?.slice(0, 4)) || 0,

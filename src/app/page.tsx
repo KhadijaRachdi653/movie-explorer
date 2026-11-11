@@ -26,6 +26,11 @@ export default async function HomePage() {
               Gérer les films
             </Link>
           )}
+          {isAdmin && (
+            <Link href="/admin/subscriptions" className="text-sm text-slate-200 hover:text-white">
+              Abonnements
+            </Link>
+          )}
           {session ? (
             <>
               <span className="text-sm text-slate-400">
@@ -34,6 +39,10 @@ export default async function HomePage() {
 
               <Link href="/profile/ratings" className="text-sm text-slate-200 hover:text-white">
                 Mes avis
+              </Link>
+
+              <Link href="/subscriptions" className="text-sm text-slate-200 hover:text-white">
+                Abonnement
               </Link>
 
               <Link href="/profile" className="text-sm text-slate-200 hover:text-white underline">

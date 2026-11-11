@@ -1,4 +1,4 @@
-const CACHE_NAME = "movie-explorer-v4";
+const CACHE_NAME = "movie-explorer-v5"; // v5 : purge des réponses /api/ mises en cache par erreur
 const OFFLINE_URL = "/offline";
 
 // 💡 CORRECTION : On réduit les assets obligatoires à l'installation pour éviter le blocage 404 du dev
@@ -44,12 +44,7 @@ self.addEventListener("fetch", (event) => {
     request.url.includes("turbopack") ||
     request.url.includes("hmr") ||
     request.url.includes("hot-update") ||
-    request.url.includes("/api/auth") ||
-    request.url.includes("/api/saved-searches") || // Données personnelles qui changent (CRUD) : jamais en cache
-    request.url.includes("/api/movies") ||
-    request.url.includes("/api/reviews") ||
-    request.url.includes("/api/ratings") ||
-    request.url.includes("/api/chat") ||
+    request.url.includes("/api/") || // Jamais de cache pour l'API : données personnelles et toujours à jour
     request.headers.get("RSC") ||
     request.url.startsWith("ws:") ||
     request.url.startsWith("wss:")

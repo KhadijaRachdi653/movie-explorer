@@ -84,7 +84,7 @@ export default function Hero({ movies, loading }: { movies: CardMovie[]; loading
           {current.match ? <span className="font-bold text-[var(--marquee)]">{current.match} % pour vous</span> : null}
           {current.year ? <span>{current.year}</span> : null}
           {current.rating ? <span><span aria-hidden className="text-[var(--marquee)]">★ </span>{current.rating.toFixed(1)}</span> : null}
-          {genreNames(current.genreIds).map((g) => (
+          {genreNames(current.genres).map((g) => (
             <span key={g} className="rounded-full border border-white/20 px-2.5 py-0.5 text-xs text-[var(--ink)]/85">{g}</span>
           ))}
         </div>

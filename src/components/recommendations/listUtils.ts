@@ -1,14 +1,13 @@
 import type { CustomListDTO } from "@/modules/recommendations/types";
-import { GENRES } from "./genres";
 
-// Genres les plus présents dans une liste (noms courts)
+// Genres les plus présents dans une liste
 export function listTopGenres(list: CustomListDTO, max = 2): string[] {
-  const count = new Map<number, number>();
-  for (const m of list.movies) for (const g of m.genreIds) if (GENRES[g]) count.set(g, (count.get(g) ?? 0) + 1);
+  const count = new Map<string, number>();
+  for (const m of list.movies) for (const g of m.genres) count.set(g, (count.get(g) ?? 0) + 1);
   return [...count.entries()]
     .sort((a, b) => b[1] - a[1])
     .slice(0, max)
-    .map(([g]) => GENRES[g].name);
+    .map(([g]) => g);
 }
 
 const rtf = new Intl.RelativeTimeFormat("fr", { numeric: "auto" });

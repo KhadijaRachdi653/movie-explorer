@@ -1,6 +1,7 @@
 "use client";
 /* eslint-disable @next/next/no-img-element -- images TMDB externes */
 
+import Link from "next/link";
 import Dialog from "./Dialog";
 import { useStreaming } from "./context";
 import { genreNames } from "./genres";
@@ -27,7 +28,7 @@ export default function MovieQuickView({ movie, listId, onClose }: { movie: Card
               {movie.match ? <span className="font-bold text-[var(--marquee)]">{movie.match} % pour vous</span> : null}
               {movie.year ? <span>{movie.year}</span> : null}
               {movie.rating ? <span><span aria-hidden className="text-[var(--marquee)]">★ </span>{movie.rating.toFixed(1)} / 10</span> : null}
-              {genreNames(movie.genreIds).map((g) => (
+              {genreNames(movie.genres).map((g) => (
                 <span key={g} className="rounded border border-white/20 px-2 py-0.5 text-xs text-[var(--ink)]/80">{g}</span>
               ))}
             </div>
@@ -40,6 +41,9 @@ export default function MovieQuickView({ movie, listId, onClose }: { movie: Card
               <button type="button" className={btnPrimary} onClick={() => { onClose(); openAddToList(movie); }}>
                 Ajouter à une liste
               </button>
+              <Link href={`/movies/${movie.movieId}`} className={btnQuiet} onClick={onClose}>
+                Voir la fiche et les avis
+              </Link>
               {listId && ownsList && (
                 <button type="button" className={btnDanger} onClick={async () => { if (await removeMovie(listId, movie)) onClose(); }}>
                   Retirer de cette liste

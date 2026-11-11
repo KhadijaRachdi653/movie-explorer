@@ -9,7 +9,7 @@ import ListRecoRow from "./ListRecoRow";
 import MovieRow from "./MovieRow";
 import Top10Row from "./Top10Row";
 import { useStreaming } from "./context";
-import { GENRES } from "./genres";
+import { genreRow } from "./genres";
 import { fromRecommended, type CardMovie } from "./movie";
 import { useApiData } from "./useApiData";
 import { btnPrimary, btnSecondary } from "./ui";
@@ -17,20 +17,20 @@ import { btnPrimary, btnSecondary } from "./ui";
 const MIN_ROW = 4; // une rangée de genre n'apparaît qu'avec au moins 4 films
 
 // Rangées par genre : chaque film va dans le genre le plus représenté parmi les siens
-function groupByGenre(movies: CardMovie[]): { genreId: number; movies: CardMovie[] }[] {
-  const count = new Map<number, number>();
-  for (const m of movies) for (const g of m.genreIds) if (GENRES[g]) count.set(g, (count.get(g) ?? 0) + 1);
+function groupByGenre(movies: CardMovie[]): { genre: string; movies: CardMovie[] }[] {
+  const count = new Map<string, number>();
+  for (const m of movies) for (const g of m.genres) count.set(g, (count.get(g) ?? 0) + 1);
   const ranked = [...count.entries()].sort((a, b) => b[1] - a[1]).map(([g]) => g);
 
-  const rows = new Map<number, CardMovie[]>();
+  const rows = new Map<string, CardMovie[]>();
   for (const m of movies) {
-    const g = ranked.find((id) => m.genreIds.includes(id));
+    const g = ranked.find((name) => m.genres.includes(name));
     if (g !== undefined) rows.set(g, [...(rows.get(g) ?? []), m]);
   }
   return ranked
     .filter((g) => (rows.get(g)?.length ?? 0) >= MIN_ROW)
     .slice(0, 4)
-    .map((g) => ({ genreId: g, movies: rows.get(g)! }));
+    .map((g) => ({ genre: g, movies: rows.get(g)! }));
 }
 
 export default function RecommendationsView() {
@@ -84,16 +84,16 @@ export default function RecommendationsView() {
         {personal.loading ? (
           <MovieRow title="Chargement des recommandations" movies={[]} loading />
         ) : (
-          <Top10Row title={isPersonal ? "Top 10 pour vous" : "Top 10 cette semaine"} movies={top10} />
+          <Top10Row title={isPersonal ? "Top 10 pour vous" : "Top 10 des spectateurs"} movies={top10} />
         )}
         {genreRows.map((r) => (
-          <MovieRow key={r.genreId} title={GENRES[r.genreId].row} movies={r.movies} />
+          <MovieRow key={r.genre} title={genreRow(r.genre)} movies={r.movies} />
         ))}
         {listsWithMovies.map((l) => (
           <ListRecoRow key={l.id} listId={l.id} title={`Inspiré de votre liste « ${l.name} »`} />
         ))}
         {isPersonal && (
-          <MovieRow title="Tendances de la semaine" movies={trending.data?.results.map(fromRecommended) ?? []} loading={trending.loading} />
+          <MovieRow title="Les mieux notés" movies={trending.data?.results.map(fromRecommended) ?? []} loading={trending.loading} />
         )}
       </div>
 

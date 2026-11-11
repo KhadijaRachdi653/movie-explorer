@@ -18,19 +18,18 @@ export const updateListSchema = z
   })
   .refine((d) => Object.values(d).some((v) => v !== undefined), { message: "Aucun champ à modifier." });
 
-export const addMovieSchema = z.object({
-  movieId: z.number({ message: "movieId doit être un nombre." }).int().positive("movieId invalide."),
-  title: z.string({ message: "Le titre est obligatoire." }).trim().min(1, "Le titre est obligatoire.").max(200),
-  posterPath: z.string().nullable().optional().default(null),
-  genreIds: z.array(z.number().int().positive()).max(20).optional().default([]),
-});
+// movieId = identifiant du film dans le catalogue (Module 2)
+export const movieIdParamSchema = z
+  .string({ message: "movieId invalide : identifiant du catalogue attendu." })
+  .trim()
+  .refine((v) => isValidObjectId(v), "movieId invalide.");
 
-export const movieIdParamSchema = z.coerce.number().int().positive("movieId invalide.");
+export const addMovieSchema = z.object({ movieId: movieIdParamSchema });
 
 export const recommendationsQuerySchema = z.object({
   trending: z.preprocess((v) => v === "true" || v === "1", z.boolean()),
   listId: z.preprocess((v) => (v === "" || v == null ? undefined : v), z.string().refine((v) => isValidObjectId(v), "Identifiant de liste invalide.").optional()),
-  movieId: z.preprocess((v) => (v === "" || v == null ? undefined : v), z.coerce.number().int().positive("movieId invalide.").optional()),
+  movieId: z.preprocess((v) => (v === "" || v == null ? undefined : v), movieIdParamSchema.optional()),
   limit: z.preprocess((v) => (v === "" || v == null ? undefined : v), z.coerce.number().int().min(1, "limit entre 1 et 40.").max(40, "limit entre 1 et 40.").default(20)),
 });
 

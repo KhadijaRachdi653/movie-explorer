@@ -11,7 +11,6 @@ import ListFormDialog from "./ListFormDialog";
 import SignInPrompt from "./SignInPrompt";
 import { useStreaming } from "./context";
 import { filmCount, listTopGenres, relativeDate } from "./listUtils";
-import { TMDB_POSTER } from "./movie";
 import { btnPrimary, btnSecondary, field } from "./ui";
 
 type Filter = "all" | "public" | "private";
@@ -167,11 +166,11 @@ export default function ListsView() {
 
 // Grande bannière : la dernière liste modifiée
 function FeaturedList({ list, onAdd }: { list: CustomListDTO; onAdd: () => void }) {
-  const cover = [...list.movies].reverse().find((m) => m.posterPath)?.posterPath;
+  const cover = [...list.movies].reverse().find((m) => m.posterUrl)?.posterUrl;
   const genres = listTopGenres(list, 3);
   return (
     <section className="relative isolate overflow-hidden px-4 pb-12 pt-28 sm:px-8" aria-label="Dernière liste modifiée">
-      {cover && <img src={`${TMDB_POSTER}${cover}`} alt="" className="absolute inset-0 -z-20 size-full scale-125 object-cover opacity-30 blur-3xl" />}
+      {cover && <img src={cover} alt="" className="absolute inset-0 -z-20 size-full scale-125 object-cover opacity-30 blur-3xl" />}
       <div className="absolute inset-0 -z-10 bg-gradient-to-b from-[var(--night)]/40 via-[var(--night)]/70 to-[var(--night)]" />
       <h1 className="text-sm font-semibold text-[var(--mist)]">Mes listes</h1>
       <div className="mt-6 grid items-center gap-8 lg:grid-cols-[1fr_minmax(0,520px)]">

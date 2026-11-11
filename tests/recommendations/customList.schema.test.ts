@@ -20,19 +20,19 @@ describe("updateListSchema", () => {
 });
 
 describe("addMovieSchema", () => {
-  it("accepte un film valide", () => {
-    expect(addMovieSchema.parse({ movieId: 550, title: "Fight Club" })).toEqual({ movieId: 550, title: "Fight Club", posterPath: null, genreIds: [] });
+  it("accepte un identifiant du catalogue (seul movieId est gardé)", () => {
+    expect(addMovieSchema.parse({ movieId: "6af3248d9ce5e9561a0e8b9f", title: "Le Parrain" })).toEqual({ movieId: "6af3248d9ce5e9561a0e8b9f" });
   });
-  it("refuse un movieId invalide", () => {
-    expect(addMovieSchema.safeParse({ movieId: -1, title: "X" }).success).toBe(false);
-    expect(addMovieSchema.safeParse({ movieId: "550", title: "X" }).success).toBe(false);
+  it("refuse un movieId invalide (ex. un ID TMDB)", () => {
+    expect(addMovieSchema.safeParse({ movieId: 550 }).success).toBe(false);
+    expect(addMovieSchema.safeParse({ movieId: "550" }).success).toBe(false);
+    expect(addMovieSchema.safeParse({}).success).toBe(false);
   });
-  it("refuse un titre vide", () => expect(addMovieSchema.safeParse({ movieId: 550, title: "  " }).success).toBe(false));
 });
 
 describe("paramètres d'URL", () => {
-  it("convertit movieId en nombre", () => expect(movieIdParamSchema.parse("550")).toBe(550));
-  it("refuse movieId non numérique", () => expect(movieIdParamSchema.safeParse("abc").success).toBe(false));
+  it("accepte un movieId du catalogue", () => expect(movieIdParamSchema.parse("6af3248d9ce5e9561a0e8b9f")).toBe("6af3248d9ce5e9561a0e8b9f"));
+  it("refuse un movieId invalide", () => expect(movieIdParamSchema.safeParse("abc").success).toBe(false));
   it("limit par défaut = 20, max 40", () => {
     expect(recommendationsQuerySchema.parse({}).limit).toBe(20);
     expect(recommendationsQuerySchema.safeParse({ limit: "41" }).success).toBe(false);

@@ -11,7 +11,7 @@ import ListFormDialog from "./ListFormDialog";
 import ListRecoRow from "./ListRecoRow";
 import MovieCard from "./MovieCard";
 import { useStreaming } from "./context";
-import { fromListMovie, TMDB_POSTER } from "./movie";
+import { fromListMovie } from "./movie";
 import { useApiData } from "./useApiData";
 import { btnDanger, btnPrimary, btnSecondary } from "./ui";
 
@@ -76,7 +76,7 @@ function ListDetail({ list, isOwner }: { list: CustomListDTO; isOwner: boolean }
   const [dialog, setDialog] = useState<"add" | "edit" | "delete" | null>(null);
   const [sort, setSort] = useState<SortKey>("recent");
   const movies = sortMovies(list.movies, sort).map(fromListMovie);
-  const cover = list.movies.find((m) => m.posterPath)?.posterPath;
+  const cover = list.movies.find((m) => m.posterUrl)?.posterUrl;
 
   async function share() {
     if (list.visibility !== "public") {
@@ -94,7 +94,7 @@ function ListDetail({ list, isOwner }: { list: CustomListDTO; isOwner: boolean }
   return (
     <>
       <section className="relative isolate overflow-hidden pb-10 pt-32" aria-label={`Liste ${list.name}`}>
-        {cover && <img src={`${TMDB_POSTER}${cover}`} alt="" className="absolute inset-0 -z-20 size-full scale-125 object-cover opacity-35 blur-3xl" />}
+        {cover && <img src={cover} alt="" className="absolute inset-0 -z-20 size-full scale-125 object-cover opacity-35 blur-3xl" />}
         <div className="absolute inset-0 -z-10 bg-gradient-to-b from-transparent via-[var(--night)]/60 to-[var(--night)]" />
         <div className="px-4 sm:px-8">
           <Link href="/lists" className="text-sm text-[var(--mist)] hover:text-[var(--ink)]">‹ Mes listes</Link>

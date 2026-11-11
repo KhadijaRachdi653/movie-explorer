@@ -10,7 +10,7 @@ import { fromRecommended, type CardMovie } from "./movie";
 import { field } from "./ui";
 
 // Résultat de GET /api/search (Module 5 — Découverte)
-type SearchResult = { results: { movieId: number; title: string; posterUrl: string | null; overview?: string; rating?: number; year?: number | null; genreIds: number[] }[] };
+type SearchResult = { results: { movieId: string; title: string; posterUrl: string | null; overview?: string; rating?: number; year?: number | null; genres?: string[] }[] };
 
 // Ajouter des films à une liste : recherche par titre + suggestions basées sur la liste
 export default function AddMoviesDialog({ list, open, onClose }: { list: CustomListDTO; open: boolean; onClose: () => void }) {
@@ -47,7 +47,7 @@ function AddMoviesPanel({ list, onClose }: { list: CustomListDTO; onClose: () =>
       setSearching(true);
       try {
         const data = await apiFetch<SearchResult>(`/api/search?query=${encodeURIComponent(q)}`);
-        if (!cancelled) setResults(data.results.map((m) => ({ ...m, genreIds: m.genreIds ?? [] })));
+        if (!cancelled) setResults(data.results.map((m) => ({ ...m, genres: m.genres ?? [] })));
       } catch (err) {
         if (!cancelled && err instanceof ApiClientError && err.status === 404) setSearchUnavailable(true);
         if (!cancelled) setResults([]);

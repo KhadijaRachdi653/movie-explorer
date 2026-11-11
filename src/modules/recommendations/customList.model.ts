@@ -4,11 +4,9 @@ import { VISIBILITIES, type Visibility } from "./types";
 export const MAX_LISTS_PER_USER = 20;
 export const MAX_MOVIES_PER_LIST = 100;
 
+// Film d'une liste : seul l'identifiant du catalogue (Module 2) est stocké, le reste est lu dans le catalogue
 export interface ListMovieDoc {
-  movieId: number;
-  title: string;
-  posterPath: string | null;
-  genreIds: number[];
+  movieId: string;
   addedAt: Date;
 }
 
@@ -25,10 +23,7 @@ export interface CustomListDoc {
 
 const ListMovieSchema = new Schema<ListMovieDoc>(
   {
-    movieId: { type: Number, required: true, min: 1 },
-    title: { type: String, required: true, trim: true },
-    posterPath: { type: String, default: null },
-    genreIds: { type: [Number], default: [] },
+    movieId: { type: String, required: true },
     addedAt: { type: Date, default: Date.now },
   },
   { _id: false }

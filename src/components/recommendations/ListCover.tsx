@@ -1,6 +1,5 @@
 /* eslint-disable @next/next/no-img-element -- images TMDB externes */
 import type { CustomListDTO } from "@/modules/recommendations/types";
-import { TMDB_POSTER } from "./movie";
 
 // Position des affiches en éventail : 1 = centrée, 2 = paire symétrique, 3 = centre + côtés
 const FAN_PAIR = ["z-20 -translate-x-[88%] -rotate-[6deg]", "z-10 -translate-x-[12%] rotate-[6deg] translate-y-1"];
@@ -12,7 +11,7 @@ const FAN = [
 
 // Couverture d'une liste : ses dernières affiches en éventail sur un fond flouté
 export default function ListCover({ list }: { list: CustomListDTO }) {
-  const posters = list.movies.filter((m) => m.posterPath).slice(-3).reverse();
+  const posters = list.movies.filter((m) => m.posterUrl).slice(-3).reverse();
 
   if (posters.length === 0) {
     return (
@@ -23,7 +22,7 @@ export default function ListCover({ list }: { list: CustomListDTO }) {
     );
   }
 
-  return <PosterFan urls={posters.map((m) => `${TMDB_POSTER}${m.posterPath}`)} />;
+  return <PosterFan urls={posters.map((m) => m.posterUrl as string)} />;
 }
 
 // Affiches en éventail sur un fond flouté (listes et favoris)

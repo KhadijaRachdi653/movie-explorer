@@ -12,8 +12,8 @@ export async function POST(request: Request, context: Context) {
     const userId = await requireUserId();
     const { id } = await context.params;
     if (!isValidListId(id)) throw new ApiError(400, "Identifiant de liste invalide.");
-    const movie = addMovieSchema.parse(await readJson(request));
-    return NextResponse.json(await addMovieToList(id, userId, movie), { status: 201 });
+    const { movieId } = addMovieSchema.parse(await readJson(request));
+    return NextResponse.json(await addMovieToList(id, userId, movieId), { status: 201 });
   } catch (err) {
     return toErrorResponse(err, "POST /api/lists/[id]/movies");
   }

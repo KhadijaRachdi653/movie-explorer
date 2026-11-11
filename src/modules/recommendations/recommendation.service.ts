@@ -1,57 +1,66 @@
-import mongoose, { Types } from "mongoose";
+import mongoose, { Types, isValidObjectId } from "mongoose";
 import dbConnect from "@/lib/mongodb";
-import { tmdbFetch, type TmdbMovie, type TmdbPage } from "@/lib/tmdb";
 import CustomList, { type CustomListDoc } from "./customList.model";
 import { getList } from "./customList.service";
-import { buildSignals, rankCandidates, toRecommendedMovie, type CandidateGroup, type SignalMovie } from "./ranking";
+import { getCatalogMap, getCatalogMovies, MIN_COMMUNITY_VOTES, type CatalogMovie } from "./catalogue";
+import { buildSignals, rankCandidates, similarTo, toRecommendedMovie, type CandidateGroup, type SignalMovie } from "./ranking";
 import type { RecommendationsResponse } from "./types";
-import { ApiError, MOVIES_UNAVAILABLE } from "./errors";
+import { ApiError } from "./errors";
+
+interface UserFilm {
+  movieId: string;
+  title?: string;
+  addedAt: Date;
+}
 
 /**
- * Films « signaux » de l'utilisateur :
+ * Films « signaux » de l'utilisateur, tous identifiés par leur id du catalogue (Module 2) :
  * - les films de ses listes personnalisées (Module 6) ;
  * - ses favoris (Module 4, collection `collectionItems`, `favorite: true`) ;
  * - les films qu'il a bien notés (Module 3, collection `ratings`, note ≥ 4/5).
- * Favoris et notes sont lus directement en base pour ne pas dépendre du code des autres modules :
- * tant qu'ils ne sont pas fusionnés, les collections sont vides et rien ne change.
+ * Favoris et notes sont lus directement en base pour ne pas dépendre du code des autres modules.
  */
-async function getUserSignalMovies(userId: string): Promise<{ movies: SignalMovie[]; alreadySeen: number[] }> {
+async function getUserSignalMovies(userId: string): Promise<{ movies: SignalMovie[]; alreadySeen: string[] }> {
   await dbConnect();
   const lists = await CustomList.find({ userId }, "movies").lean<Pick<CustomListDoc, "movies">[]>();
-  const fromLists = lists.flatMap((l) =>
-    l.movies.map((m) => ({ movieId: m.movieId, title: m.title, genreIds: m.genreIds ?? [], addedAt: m.addedAt }))
-  );
-  const [favorites, rated] = await Promise.all([getFavoriteSignalMovies(userId), getRatedMovies(userId)]);
+  const fromLists: UserFilm[] = lists.flatMap((l) => l.movies.map((m) => ({ movieId: m.movieId, addedAt: m.addedAt })));
+  const [favorites, rated] = await Promise.all([getFavoriteFilms(userId), getRatedFilms(userId)]);
+  // titre vide : la raison devient « D'après les films que vous avez bien notés »
+  const films = [...fromLists, ...favorites, ...rated.liked.map((f) => ({ ...f, title: "" }))];
   // Films déjà notés (même mal) : déjà vus, donc jamais recommandés
-  return { movies: [...fromLists, ...favorites, ...rated.liked], alreadySeen: rated.ratedIds };
+  return { movies: await withCatalogDetails(films), alreadySeen: rated.ratedIds };
+}
+
+// Complète les films de l'utilisateur avec leurs genres et réalisateur (films retirés du catalogue ignorés)
+async function withCatalogDetails(films: UserFilm[]): Promise<SignalMovie[]> {
+  const catalogue = await getCatalogMap(films.map((f) => f.movieId));
+  return films.flatMap((f) => {
+    const m = catalogue.get(f.movieId);
+    return m ? [{ movieId: m.movieId, title: f.title ?? m.title, genres: m.genres, director: m.director, addedAt: f.addedAt }] : [];
+  });
 }
 
 export const RATING_LIKED_MIN = 4; // note sur 5 à partir de laquelle un film est « aimé »
 
-interface RatingDoc {
-  movieId?: number;
-  score?: number;
-  updatedAt?: Date;
-}
-
 /** Notes de l'utilisateur : films aimés (signaux) et tous les films notés (déjà vus, à exclure). */
-async function getRatedMovies(userId: string): Promise<{ liked: SignalMovie[]; ratedIds: number[] }> {
+async function getRatedFilms(userId: string): Promise<{ liked: UserFilm[]; ratedIds: string[] }> {
   const db = mongoose.connection.db;
   if (!db || !Types.ObjectId.isValid(userId)) return { liked: [], ratedIds: [] };
   try {
     const ratings = await db
-      .collection<RatingDoc>("ratings")
+      .collection<{ movieId?: unknown; score?: number; updatedAt?: Date }>("ratings")
       .find({ userId: new Types.ObjectId(userId) }, { projection: { movieId: 1, score: 1, updatedAt: 1 } })
       .sort({ updatedAt: -1 })
       .limit(200)
       .toArray();
-    const valid = ratings.filter((r) => typeof r.movieId === "number" && typeof r.score === "number");
+    const valid = ratings.flatMap((r) =>
+      typeof r.movieId === "string" && isValidObjectId(r.movieId) && typeof r.score === "number"
+        ? [{ movieId: r.movieId, score: r.score, addedAt: r.updatedAt ?? new Date(0) }]
+        : []
+    );
     return {
-      // titre inconnu (non stocké par le Module 3) : "" donne la raison « D'après les films que vous avez bien notés »
-      liked: valid
-        .filter((r) => r.score! >= RATING_LIKED_MIN)
-        .map((r) => ({ movieId: r.movieId!, title: "", genreIds: [], addedAt: r.updatedAt ?? new Date(0) })),
-      ratedIds: valid.map((r) => r.movieId!),
+      liked: valid.filter((r) => r.score >= RATING_LIKED_MIN),
+      ratedIds: valid.map((r) => r.movieId),
     };
   } catch (err) {
     console.error("Lecture des notes impossible :", err);
@@ -59,68 +68,48 @@ async function getRatedMovies(userId: string): Promise<{ liked: SignalMovie[]; r
   }
 }
 
-interface FavoriteItem {
-  movie?: { movieId?: number; title?: string; genreIds?: number[] };
-  updatedAt?: Date;
-}
-
-async function getFavoriteSignalMovies(userId: string): Promise<SignalMovie[]> {
+async function getFavoriteFilms(userId: string): Promise<UserFilm[]> {
   const db = mongoose.connection.db;
   if (!db || !Types.ObjectId.isValid(userId)) return [];
   try {
     const items = await db
-      .collection<FavoriteItem>("collectionItems")
+      .collection<{ movie?: { movieId?: unknown; title?: string }; updatedAt?: Date }>("collectionItems")
       .find({ userId: new Types.ObjectId(userId), favorite: true }, { projection: { movie: 1, updatedAt: 1 } })
       .sort({ updatedAt: -1 })
       .limit(50)
       .toArray();
-    return items
-      .filter((i) => typeof i.movie?.movieId === "number" && typeof i.movie?.title === "string")
-      .map((i) => ({
-        movieId: i.movie!.movieId!,
-        title: i.movie!.title!,
-        genreIds: i.movie!.genreIds ?? [],
-        addedAt: i.updatedAt ?? new Date(0),
-      }));
+    return items.flatMap((i) => {
+      const id = i.movie?.movieId;
+      return typeof id === "string" && isValidObjectId(id) ? [{ movieId: id, title: i.movie?.title, addedAt: i.updatedAt ?? new Date(0) }] : [];
+    });
   } catch (err) {
     console.error("Lecture des favoris impossible :", err);
     return []; // les favoris améliorent les recommandations mais ne doivent jamais les bloquer
   }
 }
 
-async function fetchPage(path: string, params: Record<string, string | number> = {}): Promise<TmdbMovie[]> {
-  try {
-    const data = await tmdbFetch<TmdbPage<TmdbMovie>>(path, params);
-    return data.results;
-  } catch (err) {
-    console.error(`Erreur TMDB ${path} :`, err);
-    return []; // un appel en échec ne bloque pas les autres
-  }
-}
-
-/** Tendances de la semaine (rangée « Tendances » et repli sans signal). */
+/** Tendances : les films les mieux notés (spectateurs, sinon catalogue). */
 export async function getTrending(limit: number): Promise<RecommendationsResponse> {
-  return trending(limit);
+  return trending(await getCatalogMovies(), limit);
 }
 
-// Appel TMDB indispensable : s'il échoue, 503 avec un message clair (et le détail dans le terminal)
-async function tmdbRequired<T>(path: string): Promise<T> {
-  try {
-    return await tmdbFetch<T>(path);
-  } catch (err) {
-    throw new ApiError(503, MOVIES_UNAVAILABLE, { cause: err });
-  }
+function trending(catalogue: CatalogMovie[], limit: number, exclude = new Set<string>()): RecommendationsResponse {
+  const results = catalogue
+    .filter((m) => !exclude.has(m.movieId))
+    .sort((a, b) => b.rating - a.rating || b.communityVotes - a.communityVotes)
+    .slice(0, limit)
+    .map((m) => toRecommendedMovie(m, m.communityVotes >= MIN_COMMUNITY_VOTES ? "Plébiscité par les spectateurs" : "Parmi les mieux notés"));
+  return { source: "trending", results };
 }
 
-async function trending(limit: number): Promise<RecommendationsResponse> {
-  const movies = await tmdbRequired<TmdbPage<TmdbMovie>>("/trending/movie/week");
-  return { source: "trending", results: movies.results.slice(0, limit).map((m) => toRecommendedMovie(m, "Tendance cette semaine")) };
-}
-
-/** Films similaires à un film (page détail). */
-export async function getSimilarMovies(movieId: number, limit: number): Promise<RecommendationsResponse> {
-  const data = await tmdbRequired<TmdbPage<TmdbMovie>>(`/movie/${movieId}/recommendations`);
-  return { source: "similar", results: data.results.slice(0, limit).map((m) => toRecommendedMovie(m, null)) };
+/** Films similaires à un film du catalogue (même réalisateur ou genres communs). */
+export async function getSimilarMovies(movieId: string, limit: number): Promise<RecommendationsResponse> {
+  const catalogue = await getCatalogMovies();
+  const seed = catalogue.find((m) => m.movieId === movieId);
+  if (!seed) throw new ApiError(404, "Film introuvable dans le catalogue.");
+  const signals = buildSignals([{ ...seed, addedAt: new Date() }]);
+  const results = rankCandidates([{ seedTitle: seed.title, movies: similarTo(seed, catalogue) }], signals, limit);
+  return { source: "similar", results: results.map((m) => ({ ...m, reason: null, match: null })) };
 }
 
 /**
@@ -128,30 +117,25 @@ export async function getSimilarMovies(movieId: number, limit: number): Promise<
  * Avec listId : seuls les films de cette liste servent de signaux (droits de lecture vérifiés : 403/404).
  */
 export async function getPersonalRecommendations(userId: string | null, limit: number, listId?: string): Promise<RecommendationsResponse> {
+  const catalogue = await getCatalogMovies();
   let signalMovies: SignalMovie[];
-  let alreadySeen: number[] = [];
+  let alreadySeen: string[] = [];
   if (listId) {
     const list = await getList(listId, userId);
-    signalMovies = list.movies;
+    signalMovies = await withCatalogDetails(list.movies.map((m) => ({ movieId: m.movieId, addedAt: new Date(m.addedAt) })));
   } else {
-    if (!userId) return trending(limit);
+    if (!userId) return trending(catalogue, limit);
     ({ movies: signalMovies, alreadySeen } = await getUserSignalMovies(userId));
   }
 
   const signals = buildSignals(signalMovies, alreadySeen);
-  if (signals.seeds.length === 0) return trending(limit);
+  if (signals.seeds.length === 0) return trending(catalogue, limit, signals.excludeIds);
 
-  const groups: CandidateGroup[] = await Promise.all(
-    signals.seeds.map(async (s) => ({ seedTitle: s.title, movies: await fetchPage(`/movie/${s.movieId}/recommendations`) }))
-  );
+  const groups: CandidateGroup[] = signals.seeds.map((s) => ({ seedTitle: s.title, movies: similarTo(s, catalogue) }));
   if (signals.topGenres.length > 0) {
-    // "|" = OU entre genres pour TMDB
-    groups.push({
-      seedTitle: null,
-      movies: await fetchPage("/discover/movie", { with_genres: signals.topGenres.join("|"), sort_by: "popularity.desc", "vote_count.gte": 100 }),
-    });
+    groups.push({ seedTitle: null, movies: catalogue.filter((m) => m.genres.some((g) => signals.topGenres.includes(g))) });
   }
 
   const results = rankCandidates(groups, signals, limit);
-  return results.length > 0 ? { source: listId ? "list" : "personal", results } : trending(limit);
+  return results.length > 0 ? { source: listId ? "list" : "personal", results } : trending(catalogue, limit, signals.excludeIds);
 }

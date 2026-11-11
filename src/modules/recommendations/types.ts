@@ -3,12 +3,12 @@
 export const VISIBILITIES = ["private", "public"] as const;
 export type Visibility = (typeof VISIBILITIES)[number];
 
-// Film stocké dans une liste (movieId = identifiant TMDB, ≠ _id MongoDB)
+// Film d'une liste : movieId = identifiant du catalogue (Module 2) ; titre, affiche et genres lus dans le catalogue
 export interface ListMovie {
-  movieId: number;
+  movieId: string;
   title: string;
-  posterPath: string | null;
-  genreIds: number[];
+  posterUrl: string | null;
+  genres: string[];
   addedAt: string; // ISO
 }
 
@@ -19,7 +19,7 @@ export interface CustomListDTO {
   name: string;
   description: string;
   visibility: Visibility;
-  movieIds: number[]; // champ du cahier des charges
+  movieIds: string[]; // champ du cahier des charges
   movies: ListMovie[]; // détail pour l'affichage
   moviesCount: number;
   createdAt: string;
@@ -28,14 +28,14 @@ export interface CustomListDTO {
 
 // Film recommandé renvoyé par l'API
 export interface RecommendedMovie {
-  movieId: number;
+  movieId: string;
   title: string;
   overview: string;
   posterUrl: string | null;
   backdropUrl: string | null; // grande image de fond (bannière)
-  releaseDate: string | null;
-  rating: number;
-  genreIds: number[];
+  year: number | null;
+  rating: number; // sur 10
+  genres: string[];
   reason: string | null; // ex. « Parce que vous avez ajouté Fight Club »
   match: number | null; // compatibilité 55–99 % (recommandations personnalisées uniquement)
 }

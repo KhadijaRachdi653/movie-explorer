@@ -1,4 +1,4 @@
-import { posterUrl, type TmdbMovie } from "@/lib/tmdb";
+import type { CatalogMovie } from "./catalogue";
 import type { RecommendedMovie } from "./types";
 
 // Règles de classement des recommandations (fonctions pures, testées unitairement)
@@ -20,54 +20,64 @@ export function toMatchPercent(score: number, signals: Pick<UserSignals, "seeds"
 }
 
 export interface SignalMovie {
-  movieId: number;
+  movieId: string;
   title: string;
-  genreIds: number[];
+  genres: string[];
+  director: string;
   addedAt: Date | string;
 }
 
 export interface UserSignals {
-  seeds: { movieId: number; title: string }[]; // films de départ (les plus récents)
-  topGenres: number[]; // genres les plus fréquents
-  excludeIds: Set<number>; // films déjà connus de l'utilisateur
+  seeds: { movieId: string; title: string; genres: string[]; director: string }[]; // films de départ (les plus récents)
+  topGenres: string[]; // genres les plus fréquents
+  excludeIds: Set<string>; // films déjà connus de l'utilisateur
 }
 
 /**
  * Construit les signaux utilisateur à partir de ses films.
  * `alsoExclude` : films à ne jamais recommander sans en faire des signaux (ex. films mal notés, déjà vus).
  */
-export function buildSignals(movies: SignalMovie[], alsoExclude: number[] = []): UserSignals {
+export function buildSignals(movies: SignalMovie[], alsoExclude: string[] = []): UserSignals {
   const byRecent = [...movies].sort((a, b) => new Date(b.addedAt).getTime() - new Date(a.addedAt).getTime());
 
-  const seeds: { movieId: number; title: string }[] = [];
+  const seeds: UserSignals["seeds"] = [];
   for (const m of byRecent) {
     if (seeds.length >= SEED_COUNT) break;
-    if (!seeds.some((s) => s.movieId === m.movieId)) seeds.push({ movieId: m.movieId, title: m.title });
+    if (!seeds.some((s) => s.movieId === m.movieId)) seeds.push({ movieId: m.movieId, title: m.title, genres: m.genres, director: m.director });
   }
 
-  const genreCount = new Map<number, number>();
-  for (const m of movies) for (const g of m.genreIds) genreCount.set(g, (genreCount.get(g) ?? 0) + 1);
+  const genreCount = new Map<string, number>();
+  for (const m of movies) for (const g of m.genres) genreCount.set(g, (genreCount.get(g) ?? 0) + 1);
   const topGenres = [...genreCount.entries()]
-    .sort((a, b) => b[1] - a[1] || a[0] - b[0])
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
     .slice(0, TOP_GENRES_COUNT)
     .map(([g]) => g);
 
   return { seeds, topGenres, excludeIds: new Set([...movies.map((m) => m.movieId), ...alsoExclude]) };
 }
 
+/** Films du catalogue proches d'un film : même réalisateur ou au moins un genre en commun. */
+export function similarTo(seed: { movieId: string; genres: string[]; director: string }, catalogue: CatalogMovie[]): CatalogMovie[] {
+  return catalogue.filter(
+    (m) =>
+      m.movieId !== seed.movieId &&
+      ((seed.director !== "" && m.director === seed.director) || m.genres.some((g) => seed.genres.includes(g)))
+  );
+}
+
 export interface CandidateGroup {
   seedTitle: string | null; // film à l'origine du groupe ; "" = film noté (titre inconnu) ; null = recherche par genre
-  movies: TmdbMovie[];
+  movies: CatalogMovie[];
 }
 
 /**
- * Score = 2 × nb de films de départ qui le recommandent
+ * Score = 2 × nb de films de départ dont il est proche
  *       + 1 × nb de genres préférés qu'il partage
- *       + note TMDB / 10
+ *       + note / 10 (spectateurs, sinon catalogue)
  * Les films déjà connus sont exclus.
  */
 export function rankCandidates(groups: CandidateGroup[], signals: UserSignals, limit: number): RecommendedMovie[] {
-  const entries = new Map<number, { movie: TmdbMovie; occurrences: number; reason: string | null }>();
+  const entries = new Map<string, { movie: CatalogMovie; occurrences: number; reason: string | null }>();
   const reasonFor = (seedTitle: string | null) =>
     seedTitle === null
       ? "Dans vos genres préférés"
@@ -77,43 +87,40 @@ export function rankCandidates(groups: CandidateGroup[], signals: UserSignals, l
 
   for (const group of groups) {
     for (const movie of group.movies) {
-      if (signals.excludeIds.has(movie.id)) continue;
-      const entry = entries.get(movie.id);
+      if (signals.excludeIds.has(movie.movieId)) continue;
+      const entry = entries.get(movie.movieId);
       const fromSeed = group.seedTitle !== null;
       if (entry) {
         if (fromSeed) entry.occurrences += 1;
         if (fromSeed && entry.occurrences === 1) entry.reason = reasonFor(group.seedTitle);
       } else {
-        entries.set(movie.id, { movie, occurrences: fromSeed ? 1 : 0, reason: reasonFor(group.seedTitle) });
+        entries.set(movie.movieId, { movie, occurrences: fromSeed ? 1 : 0, reason: reasonFor(group.seedTitle) });
       }
     }
   }
 
   const scored = [...entries.values()].map((e) => {
-    const genreMatches = (e.movie.genre_ids ?? []).filter((g) => signals.topGenres.includes(g)).length;
-    const score =
-      WEIGHTS.occurrence * e.occurrences +
-      WEIGHTS.genreMatch * genreMatches +
-      WEIGHTS.quality * ((e.movie.vote_average ?? 0) / 10);
+    const genreMatches = e.movie.genres.filter((g) => signals.topGenres.includes(g)).length;
+    const score = WEIGHTS.occurrence * e.occurrences + WEIGHTS.genreMatch * genreMatches + WEIGHTS.quality * (e.movie.rating / 10);
     return { ...e, score };
   });
 
   return scored
-    .sort((a, b) => b.score - a.score || a.movie.id - b.movie.id)
+    .sort((a, b) => b.score - a.score || a.movie.movieId.localeCompare(b.movie.movieId))
     .slice(0, limit)
     .map((e) => toRecommendedMovie(e.movie, e.reason, toMatchPercent(e.score, signals)));
 }
 
-export function toRecommendedMovie(m: TmdbMovie, reason: string | null, match: number | null = null): RecommendedMovie {
+export function toRecommendedMovie(m: CatalogMovie, reason: string | null, match: number | null = null): RecommendedMovie {
   return {
-    movieId: m.id,
+    movieId: m.movieId,
     title: m.title,
-    overview: m.overview ?? "",
-    posterUrl: posterUrl(m.poster_path),
-    backdropUrl: m.backdrop_path ? `https://image.tmdb.org/t/p/w1280${m.backdrop_path}` : null,
-    releaseDate: m.release_date || null,
-    rating: m.vote_average ?? 0,
-    genreIds: m.genre_ids ?? [],
+    overview: m.overview,
+    posterUrl: m.posterUrl,
+    backdropUrl: m.backdropUrl,
+    year: m.year,
+    rating: Math.round(m.rating * 10) / 10,
+    genres: m.genres,
     reason,
     match,
   };

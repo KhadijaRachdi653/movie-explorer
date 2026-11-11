@@ -2,6 +2,7 @@ import { ThemeProvider } from "@/components/layout/ThemeProvider";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { AuthProvider } from "@/components/providers/AuthProvider";
+import ChatBot from "@/components/chatbot/ChatBot";
 //import AuthProvider from "@/components/providers/AuthProvider";
 import "@/app/globals.css";
 
@@ -21,6 +22,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               {children}
             </div>
             <Footer />
+            <ChatBot />
           </ThemeProvider>
         </AuthProvider>
       </body>

@@ -31,7 +31,7 @@ export async function POST(req: Request) {
   try {
     const { messages, currentMovieId } = parsed.data;
     const instructions = CINEBOT_INSTRUCTIONS + (await contextFor(currentMovieId));
-    const stream = await streamWithGemini((model, abortSignal) =>
+    const stream = await streamWithGemini("chat", (model, abortSignal) =>
       streamText({
         model,
         instructions,

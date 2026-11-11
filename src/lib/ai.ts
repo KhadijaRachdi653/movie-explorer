@@ -15,33 +15,63 @@ const QUOTA_COOLDOWN_MS = 60 * 60_000;
 const unavailableUntil: Map<string, number> = ((globalThis as { geminiCooldown?: Map<string, number> }).geminiCooldown ??=
   new Map());
 
-function markUnavailable(id: string, err: unknown) {
-  const quotaExceeded = (err as { statusCode?: number } | null)?.statusCode === 429;
-  unavailableUntil.set(id, Date.now() + (quotaExceeded ? QUOTA_COOLDOWN_MS : COOLDOWN_MS));
-  console.warn(`Gemini ${id} indisponible :`, err instanceof Error ? err.message : err);
+// ---------- Journal des bascules (terminal du serveur) ----------
+
+const seconds = (since: number) => `${((Date.now() - since) / 1000).toFixed(1)} s`;
+function reason(err: unknown): string {
+  const status = (err as { statusCode?: number } | null)?.statusCode;
+  if (status === 429) return "quota gratuit épuisé (429)";
+  if (status === 503) return "modèle surchargé (503)";
+  return (err instanceof Error ? err.message : String(err)).split("\n")[0].slice(0, 120);
 }
 
-export function geminiModelIds(): string[] {
+function markUnavailable(task: string, id: string, err: unknown, startedAt: number) {
+  const quotaExceeded = (err as { statusCode?: number } | null)?.statusCode === 429;
+  const cooldown = quotaExceeded ? QUOTA_COOLDOWN_MS : COOLDOWN_MS;
+  unavailableUntil.set(id, Date.now() + cooldown);
+  console.warn(`[Gemini] ${task} : ✗ ${id} en échec après ${seconds(startedAt)} (${reason(err)}) → mis de côté ${cooldown / 60_000} min`);
+}
+
+function logAnswer(task: string, id: string, tried: string[], startedAt: number) {
+  const fallback = tried.length > 1 ? ` après bascule (${tried.join(" → ")})` : "";
+  console.info(`[Gemini] ${task} : ✓ ${id} répond en ${seconds(startedAt)}${fallback}`);
+}
+
+export function geminiModelIds(task = "IA"): string[] {
   const configured = (process.env.CHAT_MODELS ?? "")
     .split(",")
     .map((m) => m.trim())
     .filter(Boolean);
   const all = [...new Set([...configured, ...FALLBACK_MODELS])];
   const ready = all.filter((id) => (unavailableUntil.get(id) ?? 0) < Date.now());
+  for (const id of all.filter((m) => !ready.includes(m))) {
+    const minutes = Math.ceil(((unavailableUntil.get(id) ?? 0) - Date.now()) / 60_000);
+    console.info(`[Gemini] ${task} : ${id} ignoré (mis de côté encore ${minutes} min)`);
+  }
   return ready.length ? ready : all;
 }
 
 // Exécute `run` avec le premier modèle disponible (surcharge, quota, modèle retiré → modèle suivant)
-export async function withGemini<T>(run: (model: LanguageModel, abortSignal: AbortSignal) => Promise<T>): Promise<T> {
+export async function withGemini<T>(
+  task: string,
+  run: (model: LanguageModel, abortSignal: AbortSignal) => Promise<T>
+): Promise<T> {
   let lastError: unknown;
-  for (const id of geminiModelIds()) {
+  const tried: string[] = [];
+  const startedAt = Date.now();
+  for (const id of geminiModelIds(task)) {
+    tried.push(id);
+    const attemptAt = Date.now();
     try {
-      return await run(google(id), AbortSignal.timeout(FIRST_TEXT_TIMEOUT_MS));
+      const result = await run(google(id), AbortSignal.timeout(FIRST_TEXT_TIMEOUT_MS));
+      logAnswer(task, id, tried, startedAt);
+      return result;
     } catch (err) {
       lastError = err;
-      markUnavailable(id, err);
+      markUnavailable(task, id, err, attemptAt);
     }
   }
+  console.error(`[Gemini] ${task} : aucun modèle disponible (${tried.join(", ")})`);
   throw lastError;
 }
 
@@ -54,11 +84,16 @@ export class EmptyResponseError extends Error {
 
 // Variante streaming (chat) : on passe au modèle suivant tant qu'aucun texte n'a été envoyé au client
 export async function streamWithGemini(
+  task: string,
   start: (model: LanguageModel, abortSignal: AbortSignal) => { fullStream: AsyncIterable<TextStreamPart<ToolSet>> }
 ): Promise<ReadableStream<Uint8Array>> {
   const encoder = new TextEncoder();
   let lastError: unknown = new Error("Aucun modèle Gemini configuré.");
-  for (const id of geminiModelIds()) {
+  const tried: string[] = [];
+  const startedAt = Date.now();
+  for (const id of geminiModelIds(task)) {
+    tried.push(id);
+    const attemptAt = Date.now();
     const abort = new AbortController();
     const timer = setTimeout(() => abort.abort(new Error("Délai dépassé.")), FIRST_TEXT_TIMEOUT_MS);
     const parts = start(google(id), abort.signal).fullStream[Symbol.asyncIterator]();
@@ -73,12 +108,14 @@ export async function streamWithGemini(
       }
     } catch (err) {
       lastError = err;
-      if (!(err instanceof EmptyResponseError)) markUnavailable(id, err);
+      if (err instanceof EmptyResponseError) console.warn(`[Gemini] ${task} : ${id} a répondu sans texte après ${seconds(attemptAt)}`);
+      else markUnavailable(task, id, err, attemptAt);
       await parts.return?.();
       continue;
     } finally {
       clearTimeout(timer);
     }
+    logAnswer(task, id, tried, startedAt);
     return new ReadableStream<Uint8Array>({
       start(controller) {
         controller.enqueue(encoder.encode(first));
@@ -100,5 +137,6 @@ export async function streamWithGemini(
       },
     });
   }
+  console.error(`[Gemini] ${task} : aucun modèle disponible (${tried.join(", ")})`);
   throw lastError;
 }

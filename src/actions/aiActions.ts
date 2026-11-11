@@ -20,7 +20,7 @@ export async function generateReviewDraft(movieId: string, score: number | null,
 
   try {
     const movie = await getMovie(movieId);
-    const { text } = await withGemini((model, abortSignal) =>
+    const { text } = await withGemini("aide à la rédaction", (model, abortSignal) =>
       generateText({
         model,
         abortSignal,
@@ -58,7 +58,7 @@ export async function summarizeReviews(movieId: string): Promise<AiResult> {
     const corpus = reviews
       .map((r) => `- ${r.score ? `${r.score}/5` : "sans note"}, ${r.likeCount} like(s)${r.spoiler ? ", SPOILER" : ""} : ${r.content}`)
       .join("\n");
-    const { text } = await withGemini((model, abortSignal) =>
+    const { text } = await withGemini("résumé des avis", (model, abortSignal) =>
       generateText({
         model,
         abortSignal,

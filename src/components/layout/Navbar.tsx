@@ -22,10 +22,6 @@ export default function Navbar() {
         <div className="flex items-center gap-6">
           <Link href="/" className={`text-xs font-bold uppercase tracking-wider transition-colors ${pathname === "/" ? "text-[var(--accent)]" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"}`}>Accueil</Link>
           <Link href="/movies" className={`text-xs font-bold uppercase tracking-wider transition-colors ${pathname === "/movies" ? "text-[var(--accent)]" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"}`}>Catalogue</Link>
-          <Link href="/discover" className={`text-xs font-bold uppercase tracking-wider transition-colors ${pathname === "/discover" ? "text-[var(--accent)]" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"}`}>Découvrir</Link>
-          {session?.user && (
-            <Link href="/profile/ratings" className={`text-xs font-bold uppercase tracking-wider transition-colors ${pathname === "/profile/ratings" ? "text-[var(--accent)]" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"}`}>Mes avis</Link>
-          )}
 
           <button
             onClick={toggleTheme}

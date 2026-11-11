@@ -1,128 +1,98 @@
-import { auth } from "@/lib/auth";
+import { auth, signOut } from "@/lib/auth";
+import Link from "next/link";
 
-async function getPopularMovies() {
-  const apiKey = process.env.TMDB_API_KEY;
-  if (!apiKey) return [];
-
-  try {
-    const res = await fetch(`https://api.themoviedb.org/3/movie/popular?api_key=${apiKey}&language=fr-FR&page=1`,
-       { next: { revalidate: 3600 } });
-
-    /*const res = await fetch(
-      'https://api.themoviedb.org/3/movie/popular?api_key=${apiKey}&language=fr-FR&page=1',
-      { next: { revalidate: 3600 } }
-    );*/
-    if (!res.ok) {
-          console.error(`Erreur API TMDB: Statut ${res.status}`);
-          return [];
-        }
-    const data = await res.json();
-    return data.results || [];
-  } catch (error) {
-    console.error("Échec TMDB :", error);
-    return [];
-  }
-}
-
-export default async function Home() {
+export default async function HomePage() {
   const session = await auth();
-  const movies = await getPopularMovies();
-  const genres = ["Pour vous", "Action", "Drame", "Sci-fi"];
+  const isAdmin = (session?.user as { role?: string } | undefined)?.role === "admin";
 
-  const featuredMovie = movies[0] || {
-    title: "DUNE : DEUXIÈME PARTIE",
-    backdrop_path: "/xOMo8wZ7w3jT2vYwX6vymI6Zz7X.jpg",
-    vote_average: 8.7,
-    release_date: "2024",
+  const handleSignOut = async () => {
+    "use server";
+    await signOut({ redirectTo: "/" });
   };
 
   return (
-    <main className="mx-auto max-w-7xl p-6 transition-all">
-      <div className="mb-6">
-        <span className="text-xs font-bold tracking-widest text-[var(--accent)] uppercase">
-          BONSOIR, {session?.user?.name ? session.user.name.split(" ")[0] : "INVITÉ"}
-        </span>
-        <h1 className="text-3xl font-extrabold tracking-tight mt-1 leading-tight text-[var(--text-primary)]">
-          Quel film va vous<br />faire vibrer ce soir ?
-        </h1>
-      </div>
-
-      <div className="relative mb-6 max-w-xl">
-        <span className="absolute inset-y-0 left-0 flex items-center pl-4 opacity-50">🔍</span>
-        <input
-          type="text"
-          placeholder="Rechercher un film, un acteur..."
-          className="w-full pl-12 pr-4 py-3.5 bg-[var(--surface)] border border-[var(--border-subtle)] rounded-2xl text-sm text-[var(--text-primary)] transition-colors shadow-sm"
-        />
-      </div>
-
-      <div className="flex gap-2 overflow-x-auto pb-2 mb-6 no-scrollbar">
-        {genres.map((genre, idx) => (
-          <button
-            key={genre}
-            className={`px-5 py-2 text-xs font-bold rounded-xl border transition-all whitespace-nowrap cursor-pointer ${
-              idx === 0
-                ? "bg-[var(--text-primary)] text-[var(--background)] border-transparent shadow-sm"
-                : "bg-[var(--surface)] text-[var(--text-muted)] border-[var(--border-subtle)] hover:bg-[var(--surface-variant)]"
-            }`}
-          >
-            {genre}
-          </button>
-        ))}
-      </div>
-
-      <div className="relative w-full h-[380px] rounded-[22px] overflow-hidden border border-[var(--border-subtle)] shadow-xl mb-8 bg-[var(--surface)]">
-        {featuredMovie.backdrop_path && (
-          <img
-            //src={`https://tmdb.org{featuredMovie.backdrop_path}`}
-            src={`https://image.tmdb.org/t/p/original${featuredMovie.backdrop_path}`}
-            alt="À la une"
-            className="w-full h-full object-cover opacity-85"
-          />
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-        <div className="absolute inset-0 p-6 flex flex-col justify-end text-white">
-          <span className="text-[10px] font-extrabold text-[var(--accent-light)] tracking-widest uppercase">🎬 À LA UNE</span>
-          <h2 className="text-3xl font-black uppercase tracking-tight">{featuredMovie.title}</h2>
-          <div className="flex gap-2 mt-3">
-            <button className="px-4 py-2 bg-white text-slate-950 font-bold rounded-xl text-xs active:scale-95 transition-transform cursor-pointer">▶ Bande-annonce</button>
-          </div>
+    <div className="min-h-screen bg-slate-950 text-white">
+      <header className="border-b border-slate-800 p-4 flex justify-between items-center bg-slate-900/50 backdrop-blur">
+        <div className="flex items-center gap-2 font-bold text-xl text-blue-500">
+          🎬 Movie Explorer
         </div>
-      </div>
 
-      <div className="flex justify-between items-center mb-6">
-        <h3 className="text-2xl font-black tracking-tight">Choisis pour vous</h3>
-        <button className="text-xs font-bold text-[var(--accent)] hover:underline cursor-pointer">Tout voir</button>
-      </div>
+        <nav className="flex gap-4 items-center">
+          <Link href="/movies" className="text-sm text-slate-200 hover:text-white">
+            Catalogue
+          </Link>
+          {isAdmin && (
+            <Link href="/admin/movies" className="text-sm text-slate-200 hover:text-white">
+              Gérer les films
+            </Link>
+          )}
+          {session ? (
+            <>
+              <span className="text-sm text-slate-400">
+                Bonjour, <strong className="text-white">{session.user?.name}</strong> !
+              </span>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
-        {movies.slice(1, 11).map((movie: any, idx: number) => (
-          <div key={movie.id} className="flex flex-col group">
-            <div className="relative w-full h-64 rounded-2xl overflow-hidden border border-[var(--border-subtle)] shadow-md bg-[var(--surface)] transition-all duration-300 group-hover:scale-[1.02] group-hover:shadow-xl">
-              <img
-                //src={`https://tmdb.org{movie.poster_path}`}
-                src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
-                alt={movie.title}
-                className="w-full h-full object-cover"
-                loading="lazy"
-              />
-              <div className="absolute top-3 left-3 px-2 py-1 bg-black/60 backdrop-blur-md rounded-lg flex items-center gap-1">
-                <span className="text-yellow-400 text-xs">⭐</span>
-                <span className="text-white text-[10px] font-bold">{movie.vote_average?.toFixed(1)}</span>
-              </div>
-              <div className="absolute left-3 bottom-1">
-                <span className="text-white text-3xl font-black opacity-90 drop-shadow-[0_2px_4px_rgba(0,0,0,0.7)]">
-                  {String(idx + 1).padStart(2, '0')}
-                </span>
-              </div>
-            </div>
-            <div className="mt-3">
-              <h4 className="text-sm font-bold truncate text-[var(--text-primary)] pr-2">{movie.title}</h4>
-              <p className="text-xs text-[var(--text-muted)] mt-0.5">{movie.release_date?.split("-")[0] || "2024"}</p>
-            </div>
+              <Link href="/profile/ratings" className="text-sm text-slate-200 hover:text-white">
+                Mes avis
+              </Link>
+
+              <Link href="/profile" className="text-sm text-slate-200 hover:text-white underline">
+                Mon Profil
+              </Link>
+
+              <form action={handleSignOut} className="inline">
+                <button
+                  type="submit"
+                  className="text-sm bg-red-600/80 hover:bg-red-700 text-white px-3 py-1.5 rounded-md transition-colors"
+                >
+                  Déconnexion
+                </button>
+              </form>
+            </>
+          ) : (
+            <>
+              <Link href="/login" className="text-sm hover:underline">
+                Se connecter
+              </Link>
+              <Link href="/register" className="text-sm bg-blue-600 hover:bg-blue-700 px-3 py-1.5 rounded-md transition-colors">
+                Créer un compte
+              </Link>
+            </>
+          )}
+        </nav>
+      </header>
+
+      <main className="max-w-7xl mx-auto p-6 space-y-8">
+        {session && (
+          <div className="p-4 bg-blue-950/40 border border-blue-800/50 text-blue-200 rounded-lg text-sm">
+            Ravi de vous revoir, <strong>{session.user?.name}</strong> ! Vous pouvez maintenant gérer vos listes de films favoris depuis votre espace.
           </div>
-        ))}
-      </div>
-    </main>
+        )}
+
+        <section className="text-center py-12 space-y-4">
+          <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">
+            Explorez des milliers de films
+          </h1>
+          <p className="text-slate-400 max-w-xl mx-auto">
+            Trouvez les dernières sorties, organisez vos favoris et consultez les avis de la communauté.
+          </p>
+
+          <div className="mt-8 flex flex-wrap justify-center gap-3">
+            <Link
+              href="/movies"
+              className="inline-block border border-slate-700 hover:border-blue-500 text-white font-semibold px-6 py-3 rounded-lg transition-colors"
+            >
+              🎞️ Voir le catalogue
+            </Link>
+            <Link
+              href="/discover"
+              className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg transition-colors"
+            >
+              🔎 Découvrir des films
+            </Link>
+          </div>
+        </section>
+      </main>
+    </div>
   );
 }

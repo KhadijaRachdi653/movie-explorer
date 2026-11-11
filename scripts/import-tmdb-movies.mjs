@@ -1,4 +1,4 @@
-// Import ponctuel de ~100 films populaires de TMDB dans le catalogue (collection `movies`, Module 2).
+// Import ponctuel de ~100 films connus de TMDB (≥ 1000 votes) dans le catalogue (collection `movies`, Module 2).
 //   node --env-file=.env.local scripts/import-tmdb-movies.mjs           → importe (les films déjà présents sont ignorés)
 //   node --env-file=.env.local scripts/import-tmdb-movies.mjs --remove  → supprime les films importés (+ leurs notes,
 //                                                                         avis et présence dans les listes)
@@ -6,6 +6,7 @@
 import mongoose from "mongoose";
 
 const TARGET = 100;
+const MIN_VOTES = 1000; // films connus seulement : une note TMDB sur peu de votes n'est pas fiable
 const SOURCE = "tmdb-import"; // marque les films importés pour pouvoir les retirer
 const API = "https://api.themoviedb.org/3";
 const IMG = "https://image.tmdb.org/t/p";
@@ -48,13 +49,13 @@ if (process.argv.includes("--remove")) {
     (await db.collection("movies").find({}, { projection: { title: 1 } }).toArray()).map((m) => m.title.trim().toLowerCase())
   );
 
-  // Films les mieux notés puis populaires, sans doublon ni film déjà au catalogue
+  // Films les mieux notés puis populaires (au moins MIN_VOTES votes), sans doublon ni film déjà au catalogue
   const picked = new Map();
   for (const path of ["/movie/top_rated", "/movie/popular"]) {
-    for (let page = 1; page <= 5 && picked.size < TARGET; page++) {
+    for (let page = 1; page <= 10 && picked.size < TARGET; page++) {
       for (const m of (await tmdb(path, { page })).results) {
         if (picked.size >= TARGET) break;
-        if (!m.poster_path || !m.overview || existing.has(m.title.trim().toLowerCase()) || picked.has(m.id)) continue;
+        if (m.vote_count < MIN_VOTES || !m.poster_path || !m.overview || existing.has(m.title.trim().toLowerCase()) || picked.has(m.id)) continue;
         picked.set(m.id, m);
       }
     }

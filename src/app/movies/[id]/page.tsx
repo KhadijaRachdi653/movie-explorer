@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getMovie } from "@/modules/movies/movie.service";
 import { isValidMovieId } from "@/modules/movies/movie.schema";
+import MovieReviewsSection from "@/components/reviews/MovieReviewsSection";
 
 export const dynamic = "force-dynamic";
 
@@ -50,6 +51,7 @@ export default async function MoviePage({
             </p>
           </div>
         </div>
+        <MovieReviewsSection movieId={movie.id} />
       </main>
     </div>
   );

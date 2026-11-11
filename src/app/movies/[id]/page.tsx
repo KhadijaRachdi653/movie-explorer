@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getMovie } from "@/modules/movies/movie.service";
 import { isValidMovieId } from "@/modules/movies/movie.schema";
 import MovieReviewsSection from "@/components/reviews/MovieReviewsSection";
+import { getRatingSummary } from "@/modules/reviews/review.service";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +16,7 @@ export default async function MoviePage({
   if (!isValidMovieId(id)) notFound();
   const movie = await getMovie(id).catch(() => null);
   if (!movie) notFound();
+  const community = await getRatingSummary(id);
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
@@ -41,6 +43,11 @@ export default async function MoviePage({
               {movie.year} · ★ {movie.rating.toFixed(1)}
               {movie.director && ` · ${movie.director}`}
             </p>
+            {community.count > 0 && (
+              <a href="#avis" className="mt-1 inline-block text-sm text-amber-400 hover:underline">
+                ★ {community.average.toFixed(1)}/5 · {community.count} vote{community.count > 1 ? "s" : ""} des spectateurs
+              </a>
+            )}
             {movie.genres.length > 0 && (
               <p className="mt-2 text-sm text-blue-300">
                 {movie.genres.join(" · ")}

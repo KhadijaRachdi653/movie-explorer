@@ -13,6 +13,7 @@ const LINKS = [
   { href: "/discover", label: "Découvrir" },
   { href: "/recommendations", label: "Pour vous" },
   { href: "/lists", label: "Mes listes" },
+  { href: "/collection", label: "Ma collection" },
 ];
 
 // Pages qui ont déjà leur propre en-tête : on ne les modifie pas, on évite juste le doublon

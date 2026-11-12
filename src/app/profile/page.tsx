@@ -200,6 +200,7 @@ export default function ProfilePage() {
             <h2 className="text-xl font-bold">Mon espace</h2>
             <ul className="mt-4 divide-y divide-[var(--edge)]">
               {[
+                { href: "/collection", label: "Ma collection", hint: "Favoris et films à voir, en cours, vus" },
                 { href: "/lists", label: "Mes listes", hint: "Vos films rangés par thème" },
                 { href: "/recommendations", label: "Pour vous", hint: "Vos recommandations" },
                 { href: "/profile/ratings", label: "Mes notes et avis", hint: "Votre activité" },

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getMovie } from "@/modules/movies/movie.service";
 import { isValidMovieId } from "@/modules/movies/movie.schema";
 import MovieReviewsSection from "@/components/reviews/MovieReviewsSection";
+import CollectionActions from "@/components/collection/CollectionActions";
 import { getRatingSummary } from "@/modules/reviews/review.service";
 
 export const dynamic = "force-dynamic";
@@ -63,7 +64,10 @@ export default async function MoviePage({
               <p className="mt-6 max-w-prose text-[17px] leading-relaxed text-[var(--ink)]/85">
                 {movie.overview || "Aucun synopsis."}
               </p>
-              <div className="mt-8 flex flex-wrap gap-3">
+              <div className="mt-8">
+                <CollectionActions movie={movie} />
+              </div>
+              <div className="mt-4 flex flex-wrap gap-3">
                 <a href="#avis" className="rounded-md bg-[var(--marquee)] px-5 py-3 font-semibold text-[#1a1203] hover:bg-[#f7c766]">Noter et donner mon avis</a>
                 <Link href="/recommendations" className="rounded-md bg-white/10 px-5 py-3 font-semibold backdrop-blur hover:bg-white/20">Mes recommandations</Link>
               </div>

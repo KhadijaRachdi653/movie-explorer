@@ -37,6 +37,9 @@ Base : `feature/zina-reviews-and-cinebot`. **Aucune logique modifiée** : action
 | `src/components/chatbot/ChatBotClient.tsx` | envoi, suggestions, réinitialisation | Fenêtre et bouton au thème cinéma |
 | `src/components/auth/authStyles.ts` | — | **Nouveau** : classes communes des formulaires |
 
+## Module 4 (Amine) intégré
+Voir `INTEGRATION-MODULE4.md` : module adapté au catalogue, page restylée, boutons « Favori » et « Suivi » sur la fiche film, lien « Ma collection » dans l'en-tête et dans le profil.
+
 ## Correctif : service worker
 `public/sw.js` ligne 104 : `vibrate:,` (erreur de syntaxe) → `vibrate: [100, 50, 100],`. Le navigateur refusait tout le service worker : plus de mode hors ligne. **Erreur présente aussi sur `feature/zina-reviews-and-cinebot`.**
 

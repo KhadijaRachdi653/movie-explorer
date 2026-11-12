@@ -1,5 +1,36 @@
 @import "tailwindcss";
 
+/* ============================================================
+   THÈME UNIFIÉ « salle de cinéma » (sombre uniquement)
+   Les couleurs Tailwind utilisées par toutes les pages sont redéfinies ici :
+   slate = bleu nuit, blue = or. Les pages changent d'apparence sans être modifiées.
+   ============================================================ */
+@theme {
+  --color-slate-50: #faf8f3;
+  --color-slate-100: #f3efe6;
+  --color-slate-200: #e2ded5;
+  --color-slate-300: #c4c8d3;
+  --color-slate-400: #98a0b5;
+  --color-slate-500: #6b7590;
+  --color-slate-600: #3a4562;
+  --color-slate-700: #263049;
+  --color-slate-800: #182036;
+  --color-slate-900: #0f1526;
+  --color-slate-950: #070b16;
+
+  --color-blue-100: #fdf1d8;
+  --color-blue-200: #fbe2ae;
+  --color-blue-300: #f7cd78;
+  --color-blue-400: #f2b544;
+  --color-blue-500: #f2b544;
+  --color-blue-600: #f2b544;
+  --color-blue-700: #f7c766;
+  --color-blue-800: #b39556;
+  --color-blue-900: #3a2e14;
+
+  --font-sans: "Bricolage Grotesque", "Manrope", ui-sans-serif, system-ui, sans-serif;
+}
+
 @layer base {
   /* ☀️ PALETTE CLAIRE (Figma Soft Light) */
   :root {
@@ -15,29 +46,86 @@
 
   /* 🌙 PALETTE SOMBRE (Cinea Deep Dark Mode) */
   .dark {
-    --background: #090B10;       /* Fond nuit profonde organique */
-    --surface: #12151B;          /* Surfaces feutrées sombres */
-    --surface-variant: #1B1E25;  /* Châssis d'inputs et séparateurs */
-    --border-subtle: #22252D;    /* Bordure sombre fondue (ZÉRO CADRE NOIR) */
-    --text-primary: #F5F3EE;     /* Texte ivoire lumineux */
-    --text-muted: #97979A;       /* Texte secondaire gris moyen */
-    --accent: #D7BC83;           /* Champagne brillant */
-    --accent-light: #E2CA98;     /* Or satiné / Golden */
+    --background: #070B16;       /* Bleu nuit (thème unifié) */
+    --surface: #0F1526;          /* Surfaces */
+    --surface-variant: #182036;  /* Champs et séparateurs */
+    --border-subtle: #263049;    /* Bordures */
+    --text-primary: #F3EFE6;     /* Texte blanc chaud */
+    --text-muted: #98A0B5;       /* Texte secondaire */
+    --accent: #F2B544;           /* Or « marquise de cinéma » */
+    --accent-light: #F7C766;     /* Or clair */
+  }
+
+  /* Variables du thème cinéma, disponibles partout (en-tête commun, Module 6) */
+  :root {
+    --night: #070b16;
+    --deep: #0f1526;
+    --raised: #182036;
+    --edge: #263049;
+    --ink: #f3efe6;
+    --mist: #98a0b5;
+    --marquee: #f2b544;
+    --marquee-deep: #c98f1f;
+    --danger: #f08a7e;
   }
 }
 
 body {
   background-color: var(--background);
   color: var(--text-primary);
-  font-family: 'Manrope', Arial, sans-serif;
+  font-family: var(--font-sans);
   transition: background-color 0.3s ease, color 0.3s ease;
   overflow-x: hidden;
 }
 
-/* Élimination des bordures d'autofocus intrusives des navigateurs */
-input:focus, button:focus, select:focus, textarea:focus {
-  outline: none !important;
-  box-shadow: none !important;
+/* Focus : contour seulement au clavier (accessibilité), jamais au clic de souris */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+:focus-visible {
+  outline: 2px solid var(--marquee);
+  outline-offset: 2px;
+}
+input:focus-visible, textarea:focus-visible, select:focus-visible {
+  outline-offset: 0;
+}
+
+/* Accueil : mur d'affiches qui défile, apparition du titre */
+.poster-lane { animation: poster-lane linear infinite; }
+@keyframes poster-lane { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+.hero-text { animation: hero-text-in 800ms cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+@keyframes hero-text-in { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+/* Explorer par genre : apparition en cascade des affiches */
+.genre-grid > li { animation: hero-text-in 450ms cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+@media (prefers-reduced-motion: reduce) {
+  .poster-lane, .hero-text, .genre-grid > li { animation: none; }
+}
+
+/* Chargement : bloc animé (disponible sur toutes les pages) */
+.skeleton {
+  background: linear-gradient(100deg, var(--deep) 30%, var(--raised) 50%, var(--deep) 70%);
+  background-size: 300% 100%;
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+}
+@keyframes skeleton-shimmer { from { background-position: 100% 0; } to { background-position: 0 0; } }
+@media (prefers-reduced-motion: reduce) { .skeleton { animation: none; } }
+
+/* Champs pré-remplis par le navigateur : garder le thème sombre (sinon fond bleu clair) */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+select:-webkit-autofill {
+  -webkit-text-fill-color: var(--ink);
+  caret-color: var(--ink);
+  box-shadow: 0 0 0 1000px var(--night) inset;
+  transition: background-color 9999s ease-out;
+}
+
+/* Boutons principaux (anciennement bleus) : fond or => texte foncé pour rester lisible.
+   Hors @layer, donc prioritaire sur les classes text-white des pages. */
+.bg-blue-600, .bg-blue-700 {
+  color: #1a1203;
 }
 
 /* Masquage ergonomique de la scrollbar pour les listes horizontales */

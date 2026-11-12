@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { updateProfile, deleteAccount, getAllUsers } from "@/actions/authActions";
 
 interface AdminUser {
@@ -84,127 +85,154 @@ export default function ProfilePage() {
     }
   }
 
+  const field = "w-full rounded-md border border-[var(--edge)] bg-[var(--night)] px-4 py-3 text-[var(--ink)] transition-colors focus:border-[var(--marquee)] focus:outline-none";
+  const card = "rounded-xl border border-[var(--edge)] bg-[var(--deep)] p-6 sm:p-8";
+
   if (!user) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center text-white">
-        <p className="text-sm text-slate-400 animate-pulse">Chargement de votre espace profil...</p>
+      <div className="px-4 pt-12 sm:px-8" aria-busy="true">
+        <div className="skeleton h-28 max-w-xl rounded-xl" />
+        <p className="sr-only">Chargement de votre espace profil…</p>
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 mt-10 space-y-6 pb-12">
-      <div className="mx-auto max-w-md p-6 bg-slate-900 rounded-2xl text-white shadow-xl">
-        <div className="flex justify-between items-center border-b border-slate-800 pb-4">
-          <div>
-            <h1 className="text-2xl font-bold">Mon Profil</h1>
-            <p className="text-xs text-slate-400 mt-1">Espace de gestion de compte</p>
+    <div className="pb-20">
+      {/* En-tête du profil */}
+      <section className="relative isolate overflow-hidden border-b border-[var(--edge)] px-4 pb-10 pt-12 sm:px-8">
+        <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top_left,rgba(242,181,68,0.18),transparent_55%)]" />
+        <div className="flex flex-wrap items-center gap-6">
+          <span aria-hidden className="flex size-20 items-center justify-center rounded-full bg-[var(--marquee)] text-4xl font-extrabold text-[#1a1203] shadow-xl shadow-black/40">
+            {user.name.charAt(0).toUpperCase() || "?"}
+          </span>
+          <div className="min-w-0">
+            <h1 className="text-[clamp(2rem,4.5vw,3.5rem)] font-extrabold leading-none tracking-[-0.03em]">{user.name}</h1>
+            <p className="mt-2 flex flex-wrap items-center gap-3 text-[var(--mist)]">
+              <span className="truncate">{user.email}</span>
+              {role === "admin" && <span className="rounded-full bg-[var(--marquee)]/15 px-2.5 py-0.5 text-xs font-semibold text-[var(--marquee)]">Administrateur</span>}
+            </p>
           </div>
           <button
             onClick={() => window.location.href = "/api/auth/signout"}
-            className="rounded-lg bg-slate-800 px-3 py-2 text-xs font-medium hover:bg-slate-700 transition"
+            className="ml-auto rounded-md bg-white/10 px-4 py-2.5 text-sm font-semibold hover:bg-white/20"
           >
             Déconnexion
           </button>
         </div>
+      </section>
 
-        <form onSubmit={handleUpdate} className="mt-6 space-y-4">
-          <div>
-            <label className="block text-sm mb-1">Nom d'utilisateur</label>
-            <input
-              name="name"
-              type="text"
-              defaultValue={user.name}
-              required
-              className="w-full rounded-lg border border-slate-700 bg-slate-950 p-3 text-white focus:outline-none focus:border-blue-500"
-            />
-          </div>
-          <div>
-            <label className="block text-sm mb-1 text-slate-500">Adresse e-mail (Non modifiable)</label>
-            <input
-              type="email"
-              disabled
-              value={user.email}
-              className="w-full rounded-lg border border-slate-800 bg-slate-950 p-3 text-slate-500 cursor-not-allowed"
-            />
-          </div>
+      <div className="grid gap-6 px-4 pt-10 sm:px-8 lg:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="space-y-6">
+          {/* Informations du compte */}
+          <section className={card} aria-labelledby="infos-title">
+            <h2 id="infos-title" className="text-xl font-bold">Informations du compte</h2>
+            <form onSubmit={handleUpdate} className="mt-6 space-y-5">
+              <div>
+                <label htmlFor="profile-name" className="mb-1.5 block text-sm font-medium text-[var(--ink)]/85">Nom d&apos;utilisateur</label>
+                <input id="profile-name" name="name" type="text" defaultValue={user.name} required autoComplete="name" className={field} />
+              </div>
+              <div>
+                <label htmlFor="profile-email" className="mb-1.5 block text-sm font-medium text-[var(--ink)]/85">Adresse e-mail</label>
+                <input id="profile-email" type="email" disabled value={user.email} aria-describedby="email-help" className={`${field} cursor-not-allowed text-[var(--mist)]`} />
+                <p id="email-help" className="mt-1.5 text-xs text-[var(--mist)]">L&apos;adresse e-mail ne peut pas être modifiée.</p>
+              </div>
 
-          {error && <p className="text-sm text-red-400">{error}</p>}
-          {message && <p className="text-sm text-green-400">{message}</p>}
+              {error && <p role="alert" className="rounded-md border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-300">{error}</p>}
+              {message && <p role="status" className="rounded-md border border-green-500/40 bg-green-500/10 p-3 text-sm text-green-300">{message}</p>}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-lg bg-emerald-600 p-3 font-semibold hover:bg-emerald-700 transition disabled:bg-emerald-800 disabled:cursor-not-allowed"
-          >
-            {loading ? "Mise à jour..." : "Mettre à jour les informations"}
-          </button>
-        </form>
+              <button
+                type="submit"
+                disabled={loading}
+                className="rounded-md bg-[var(--marquee)] px-6 py-3 font-semibold text-[#1a1203] transition-colors hover:bg-[#f7c766] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {loading ? "Mise à jour…" : "Enregistrer les modifications"}
+              </button>
+            </form>
+          </section>
 
-        <div className="mt-8 border-t border-slate-800 pt-6">
-          <h2 className="text-lg font-semibold text-red-400">Zone de danger</h2>
-          <p className="text-xs text-slate-400 mt-1">La suppression est immédiate et irréversible.</p>
-          <form onSubmit={handleDelete} className="mt-4">
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full rounded-lg bg-red-600 p-3 font-semibold hover:bg-red-700 transition disabled:bg-red-800"
-            >
-              Supprimer définitivement mon compte
-          </button>
-          </form>
-        </div>
-      </div>
-
-      {role === "admin" && (
-        <div className="mx-auto max-w-4xl p-6 bg-slate-900 rounded-2xl text-white shadow-xl border border-slate-800">
-          <h2 className="text-xl font-bold text-blue-400 flex items-center gap-2">
-            📋 Liste des Utilisateurs Enregistrés
-          </h2>
-          <p className="text-xs text-slate-400 mt-1 mb-6">Gestion des comptes et des droits d'accès</p>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-slate-300">
-              <thead className="bg-slate-950 text-slate-400 uppercase text-xs">
-                <tr>
-                  <th className="p-3">Nom complet</th>
-                  <th className="p-3">Adresse e-mail</th>
-                  <th className="p-3">Rôle</th>
-                  <th className="p-3">Créé le</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800">
-                {usersList.length === 0 ? (
-                  <tr>
-                    <td colSpan={4} className="p-4 text-center text-slate-500 text-xs italic">
-                      Aucun autre utilisateur trouvé ou chargement en cours...
-                    </td>
-                  </tr>
-                ) : (
-                  usersList.map((u) => (
-                    <tr key={u.id} className="hover:bg-slate-950/40 transition-colors">
-                      <td className="p-3 font-medium text-white">{u.name}</td>
-                      <td className="p-3 text-slate-400">{u.email}</td>
-                      <td className="p-3">
-                        <span className={`px-2 py-0.5 rounded text-xs font-semibold ${
-                          u.role === 'admin'
-                            ? 'bg-purple-900/60 text-purple-200 border border-purple-700'
-                            : 'bg-slate-800 text-slate-300'
-                        }`}>
-                          {u.role}
-                        </span>
-                      </td>
-                      <td className="p-3 text-xs text-slate-500">
-                        {new Date(u.createdAt).toLocaleDateString("fr-FR")}
-                      </td>
+          {/* Administration : liste des utilisateurs */}
+          {role === "admin" && (
+            <section className={card} aria-labelledby="users-title">
+              <h2 id="users-title" className="text-xl font-bold">Utilisateurs enregistrés</h2>
+              <p className="mt-1 text-sm text-[var(--mist)]">Gestion des comptes et des droits d&apos;accès</p>
+              <div className="mt-6 overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead className="text-xs text-[var(--mist)]">
+                    <tr className="border-b border-[var(--edge)]">
+                      <th scope="col" className="py-3 pr-4 font-medium">Nom complet</th>
+                      <th scope="col" className="py-3 pr-4 font-medium">Adresse e-mail</th>
+                      <th scope="col" className="py-3 pr-4 font-medium">Rôle</th>
+                      <th scope="col" className="py-3 font-medium">Créé le</th>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                  </thead>
+                  <tbody className="divide-y divide-[var(--edge)]">
+                    {usersList.length === 0 ? (
+                      <tr>
+                        <td colSpan={4} className="py-6 text-center text-sm text-[var(--mist)]">
+                          Aucun autre utilisateur trouvé ou chargement en cours…
+                        </td>
+                      </tr>
+                    ) : (
+                      usersList.map((u) => (
+                        <tr key={u.id} className="transition-colors hover:bg-white/5">
+                          <td className="py-3 pr-4 font-medium">{u.name}</td>
+                          <td className="py-3 pr-4 text-[var(--mist)]">{u.email}</td>
+                          <td className="py-3 pr-4">
+                            <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${u.role === "admin" ? "bg-[var(--marquee)]/15 text-[var(--marquee)]" : "bg-white/10 text-[var(--ink)]/80"}`}>
+                              {u.role}
+                            </span>
+                          </td>
+                          <td className="py-3 text-xs text-[var(--mist)]">{new Date(u.createdAt).toLocaleDateString("fr-FR")}</td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          )}
         </div>
-      )}
+
+        <aside className="space-y-6">
+          {/* Accès rapides */}
+          <nav aria-label="Mon espace" className={card}>
+            <h2 className="text-xl font-bold">Mon espace</h2>
+            <ul className="mt-4 divide-y divide-[var(--edge)]">
+              {[
+                { href: "/lists", label: "Mes listes", hint: "Vos films rangés par thème" },
+                { href: "/recommendations", label: "Pour vous", hint: "Vos recommandations" },
+                { href: "/profile/ratings", label: "Mes notes et avis", hint: "Votre activité" },
+              ].map((l) => (
+                <li key={l.href}>
+                  <Link href={l.href} className="group flex items-center justify-between gap-4 py-3.5">
+                    <span>
+                      <span className="block font-semibold group-hover:text-[var(--marquee)]">{l.label}</span>
+                      <span className="block text-sm text-[var(--mist)]">{l.hint}</span>
+                    </span>
+                    <span aria-hidden className="text-xl text-[var(--mist)] transition-transform group-hover:translate-x-1 group-hover:text-[var(--marquee)]">›</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+
+          {/* Zone de danger */}
+          <section className="rounded-xl border border-red-500/30 bg-red-500/5 p-6" aria-labelledby="danger-title">
+            <h2 id="danger-title" className="text-lg font-bold text-red-300">Supprimer mon compte</h2>
+            <p className="mt-1 text-sm text-[var(--mist)]">La suppression est immédiate et irréversible.</p>
+            <form onSubmit={handleDelete} className="mt-4">
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full rounded-md border border-red-500/50 px-4 py-3 font-semibold text-red-300 transition-colors hover:bg-red-500/10 disabled:opacity-60"
+              >
+                Supprimer définitivement mon compte
+              </button>
+            </form>
+          </section>
+        </aside>
+      </div>
     </div>
   );
 }

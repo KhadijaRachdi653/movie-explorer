@@ -118,44 +118,51 @@ export default function ChatBotClient({ owner }: { owner: string }) {
   const waitingFirstWord = isLoading && messages.at(-1)?.role === "user";
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 text-slate-100">
+    <div className="fixed bottom-4 right-4 z-50 text-[var(--ink)]">
       {isOpen ? (
-        <div className="flex h-[min(560px,calc(100vh-2rem))] w-[min(380px,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 shadow-2xl shadow-black/50">
-          <div className="flex items-center justify-between bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-3">
-            <div>
-              <h3 className="font-semibold">CineBot 🎬</h3>
-              <p className="text-xs text-blue-100">Votre assistant cinéma · Gemini</p>
+        <div
+          role="dialog"
+          aria-label="CineBot, assistant cinéma"
+          className="flex h-[min(600px,calc(100vh-2rem))] w-[min(400px,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-[var(--edge)] bg-[var(--deep)] shadow-2xl shadow-black/60"
+        >
+          {/* En-tête */}
+          <div className="flex items-center gap-3 border-b border-[var(--edge)] bg-[radial-gradient(ellipse_at_top_left,rgba(242,181,68,0.22),transparent_70%)] px-4 py-3.5">
+            <span aria-hidden className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[var(--marquee)] text-lg shadow-lg shadow-black/40">🎬</span>
+            <div className="min-w-0 flex-1">
+              <h3 className="font-bold leading-tight">CineBot</h3>
+              <p className="flex items-center gap-1.5 text-xs text-[var(--mist)]">
+                <span aria-hidden className="size-1.5 rounded-full bg-green-400" /> Assistant cinéma, propulsé par Gemini
+              </p>
             </div>
-            <div className="flex items-center gap-1">
-              {messages.length > 0 && (
-                <button
-                  onClick={() => setMessages([])}
-                  title="Nouvelle conversation"
-                  className="rounded px-2 py-1 text-sm hover:bg-blue-800"
-                >
-                  🗑️
-                </button>
-              )}
-              <button onClick={() => setIsOpen(false)} aria-label="Fermer" className="rounded px-2 py-1 text-xl hover:bg-blue-800">
-                ✕
+            {messages.length > 0 && (
+              <button
+                onClick={() => setMessages([])}
+                title="Nouvelle conversation"
+                aria-label="Nouvelle conversation"
+                className="rounded-md px-2 py-1.5 text-sm text-[var(--mist)] hover:bg-white/10 hover:text-[var(--ink)]"
+              >
+                ↺
               </button>
-            </div>
+            )}
+            <button onClick={() => setIsOpen(false)} aria-label="Fermer CineBot" className="rounded-md px-2 py-1 text-xl text-[var(--mist)] hover:bg-white/10 hover:text-[var(--ink)]">
+              ×
+            </button>
           </div>
 
-          <div className="flex-1 space-y-3 overflow-y-auto p-4">
+          {/* Messages */}
+          <div className="flex-1 space-y-3 overflow-y-auto p-4" aria-live="polite">
             {messages.length === 0 && (
-              <div className="mt-4 space-y-4 text-center text-sm text-slate-400">
-                <p>
-                  👋 Bonjour ! Je connais tout le catalogue et les avis de la communauté.
-                  <br />
-                  Que puis-je pour vous ?
-                </p>
-                <div className="flex flex-col items-center gap-2">
+              <div className="mt-2 space-y-5">
+                <div>
+                  <p className="text-lg font-bold">Bonjour 👋</p>
+                  <p className="mt-1 text-sm text-[var(--mist)]">Je connais tout le catalogue et les avis de la communauté. Que puis-je pour vous ?</p>
+                </div>
+                <div className="flex flex-col gap-2">
                   {suggestions.map((s) => (
                     <button
                       key={s}
                       onClick={() => send(s.replace(/^\S+\s/, ""))}
-                      className="rounded-full border border-slate-700 px-3 py-1.5 text-slate-200 transition hover:border-blue-500 hover:bg-slate-900"
+                      className="rounded-lg border border-[var(--edge)] bg-[var(--night)] px-3.5 py-2.5 text-left text-sm transition-colors hover:border-[var(--marquee)] hover:text-[var(--marquee)]"
                     >
                       {s}
                     </button>
@@ -163,59 +170,70 @@ export default function ChatBotClient({ owner }: { owner: string }) {
                 </div>
               </div>
             )}
+
             {messages.map((msg) => (
               <div key={msg.id} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
                 <div
-                  className={`max-w-[85%] whitespace-pre-line rounded-2xl px-3 py-2 text-sm leading-relaxed ${
-                    msg.role === "user" ? "rounded-br-none bg-blue-600 text-white" : "rounded-bl-none bg-slate-800 text-slate-100"
+                  className={`max-w-[85%] whitespace-pre-line rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed ${
+                    msg.role === "user"
+                      ? "rounded-br-sm bg-[var(--marquee)] text-[#1a1203]"
+                      : "rounded-bl-sm border border-[var(--edge)] bg-[var(--night)] text-[var(--ink)]"
                   }`}
                 >
                   {msg.role === "assistant" ? renderInline(msg.content) : msg.content}
                 </div>
               </div>
             ))}
+
             {waitingFirstWord && (
-              <div className="flex items-center gap-1 text-sm text-slate-400">
-                CineBot réfléchit
-                <span className="animate-bounce">.</span>
-                <span className="animate-bounce [animation-delay:150ms]">.</span>
-                <span className="animate-bounce [animation-delay:300ms]">.</span>
+              <div className="flex items-center gap-2 text-sm text-[var(--mist)]" role="status">
+                <span className="flex gap-1" aria-hidden>
+                  <span className="size-1.5 animate-bounce rounded-full bg-[var(--marquee)]" />
+                  <span className="size-1.5 animate-bounce rounded-full bg-[var(--marquee)] [animation-delay:150ms]" />
+                  <span className="size-1.5 animate-bounce rounded-full bg-[var(--marquee)] [animation-delay:300ms]" />
+                </span>
+                CineBot réfléchit…
               </div>
             )}
+
             <div ref={messagesEndRef} />
           </div>
 
+          {/* Saisie */}
           <form
             onSubmit={(e) => {
               e.preventDefault();
               send(input);
             }}
-            className="flex gap-2 border-t border-slate-800 p-3"
+            className="flex gap-2 border-t border-[var(--edge)] p-3"
           >
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               maxLength={2000}
+              aria-label="Votre message"
               placeholder={currentMovieId ? "Une question sur ce film ?" : "Demandez un film, un avis…"}
-              className="flex-1 rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm outline-none focus:border-blue-500"
+              className="flex-1 rounded-full border border-[var(--edge)] bg-[var(--night)] px-4 py-2.5 text-sm text-[var(--ink)] placeholder:text-[var(--mist)]/60 focus:border-[var(--marquee)] focus:outline-none"
             />
             <button
               type="submit"
               disabled={isLoading || !input.trim()}
-              className="rounded-xl bg-blue-600 px-3 py-2 text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+              aria-label="Envoyer"
+              className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[var(--marquee)] text-lg font-bold text-[#1a1203] transition-colors hover:bg-[#f7c766] disabled:opacity-40"
             >
-              Envoyer
+              <span aria-hidden>↑</span>
             </button>
           </form>
         </div>
       ) : (
         <button
           onClick={() => setIsOpen(true)}
-          className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-r from-blue-600 to-blue-700 text-2xl shadow-lg shadow-black/40 transition-transform hover:scale-110"
-          aria-label="Ouvrir CineBot"
+          className="group flex h-14 items-center gap-2 rounded-full bg-[var(--marquee)] pl-4 pr-5 font-semibold text-[#1a1203] shadow-xl shadow-black/50 transition-transform hover:-translate-y-0.5"
+          aria-label="Ouvrir CineBot, l'assistant cinéma"
         >
-          💬
+          <span aria-hidden className="text-xl">🎬</span>
+          <span className="hidden sm:inline">Demander à CineBot</span>
         </button>
       )}
     </div>

@@ -251,118 +251,140 @@ export default function DiscoverPage() {
   }
 
   const input =
-    "w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-2.5 text-base text-white placeholder-slate-500 focus:outline-none focus:border-blue-500";
-  const btn = "rounded-lg px-4 py-2.5 font-semibold transition-colors disabled:opacity-50";
+    "w-full rounded-md border border-[var(--edge)] bg-[var(--night)] px-3.5 py-2.5 text-base text-[var(--ink)] placeholder:text-[var(--mist)]/60 transition-colors focus:border-[var(--marquee)] focus:outline-none";
+  const btn = "rounded-md px-4 py-2.5 font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50";
+  const btnPrimary = `${btn} bg-[var(--marquee)] text-[#1a1203] hover:bg-[#f7c766]`;
+  const btnGhost = `${btn} bg-white/10 hover:bg-white/20`;
+  const chip = "rounded-full px-3 py-1.5 text-xs font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50";
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white">
-      <header className="sticky top-0 z-10 border-b border-slate-800 bg-slate-900/90 backdrop-blur px-4 py-3 flex items-center justify-between">
-        <Link href="/" className="font-bold text-lg text-blue-500">🎬 Movie Explorer</Link>
-        <a href="#saved" className="text-sm text-blue-400 underline lg:hidden">Mes recherches ↓</a>
-        <span className="hidden lg:inline text-sm text-slate-400">Découvrir</span>
-      </header>
-
+    <div className="min-h-screen bg-slate-950 text-slate-100">
       {!online && (
-        <div className="bg-amber-500/15 border-b border-amber-600/40 text-amber-200 text-sm px-4 py-2 text-center">
+        <div role="status" className="border-b border-amber-600/40 bg-amber-500/15 px-4 py-2 text-center text-sm text-amber-200">
           Mode hors ligne : seules les recherches déjà consultées sont disponibles.
         </div>
       )}
 
-      <main className="mx-auto max-w-6xl p-4 space-y-6 lg:grid lg:grid-cols-[1fr_320px] lg:gap-6 lg:space-y-0">
-        {/* ===== Recherche ===== */}
-        <section className="space-y-4 min-w-0">
-          <form onSubmit={onSubmit} className="space-y-3 rounded-xl bg-slate-900/60 border border-slate-800 p-4">
+      {/* En-tête de page + barre de recherche */}
+      <section className="relative isolate overflow-hidden px-4 pb-8 pt-10 sm:px-8">
+        <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top_right,rgba(242,181,68,0.14),transparent_55%)]" />
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">Découvrir</h1>
+            <p className="mt-2 text-[var(--mist)]">Recherchez par titre, filtrez par genre, année ou note, et sauvegardez vos recherches.</p>
+          </div>
+          <a href="#saved" className="text-sm font-semibold text-[var(--marquee)] hover:underline lg:hidden">Mes recherches sauvegardées</a>
+        </div>
+
+        <form onSubmit={onSubmit} className="mt-8 space-y-3" role="search">
+          <div className="relative">
+            <span aria-hidden className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-xl text-[var(--mist)]">⌕</span>
             <input
-              className={input}
+              className="w-full rounded-full border border-[var(--edge)] bg-[var(--deep)] py-4 pl-12 pr-4 text-lg text-[var(--ink)] placeholder:text-[var(--mist)]/60 transition-colors focus:border-[var(--marquee)] focus:outline-none"
               placeholder="Rechercher un film par titre…"
+              aria-label="Rechercher un film par titre"
               value={form.query}
               maxLength={100}
               onChange={(e) => setForm({ ...form, query: e.target.value })}
             />
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              <select className={input} value={form.genre} onChange={(e) => setForm({ ...form, genre: e.target.value })} aria-label="Genre">
-                <option value="">Tous genres</option>
-                {genres.map((g) => (
-                  <option key={g.id} value={g.id}>{g.name}</option>
-                ))}
-              </select>
-              <input
-                className={input}
-                type="number"
-                placeholder="Année"
-                min={1900}
-                max={new Date().getFullYear() + 5}
-                value={form.year}
-                onChange={(e) => setForm({ ...form, year: e.target.value })}
-                aria-label="Année"
-              />
-              <select className={input} value={form.minRating} onChange={(e) => setForm({ ...form, minRating: e.target.value })} aria-label="Note minimale">
-                <option value="">Toutes notes</option>
-                {[5, 6, 7, 8, 9].map((n) => (
-                  <option key={n} value={n}>≥ {n}/10</option>
-                ))}
-              </select>
-              <select className={input} value={form.sortBy} onChange={(e) => setForm({ ...form, sortBy: e.target.value as SortOption })} aria-label="Tri">
-                {Object.entries(SORT_LABELS).map(([k, v]) => (
-                  <option key={k} value={k}>{v}</option>
-                ))}
-              </select>
-            </div>
-            <div className="flex gap-2">
-              <button type="submit" className={`${btn} flex-1 bg-blue-600 hover:bg-blue-700`} disabled={loading}>
-                {loading ? "Recherche…" : "Rechercher"}
-              </button>
-              <button
-                type="button"
-                className={`${btn} bg-slate-800 hover:bg-slate-700`}
-                onClick={() => { setForm(EMPTY_FORM); runSearch({ sortBy: "popularity" }, 1); }}
-              >
-                Réinitialiser
-              </button>
-            </div>
-          </form>
+          </div>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-[repeat(4,minmax(0,1fr))_auto_auto]">
+            <select className={input} value={form.genre} onChange={(e) => setForm({ ...form, genre: e.target.value })} aria-label="Genre">
+              <option value="">Tous genres</option>
+              {genres.map((g) => (
+                <option key={g.id} value={g.id}>{g.name}</option>
+              ))}
+            </select>
+            <input
+              className={input}
+              type="number"
+              placeholder="Année"
+              min={1900}
+              max={new Date().getFullYear() + 5}
+              value={form.year}
+              onChange={(e) => setForm({ ...form, year: e.target.value })}
+              aria-label="Année"
+            />
+            <select className={input} value={form.minRating} onChange={(e) => setForm({ ...form, minRating: e.target.value })} aria-label="Note minimale">
+              <option value="">Toutes notes</option>
+              {[5, 6, 7, 8, 9].map((n) => (
+                <option key={n} value={n}>≥ {n}/10</option>
+              ))}
+            </select>
+            <select className={input} value={form.sortBy} onChange={(e) => setForm({ ...form, sortBy: e.target.value as SortOption })} aria-label="Tri">
+              {Object.entries(SORT_LABELS).map(([k, v]) => (
+                <option key={k} value={k}>{v}</option>
+              ))}
+            </select>
+            <button type="submit" className={`${btnPrimary} col-span-1`} disabled={loading}>
+              {loading ? "Recherche…" : "Rechercher"}
+            </button>
+            <button
+              type="button"
+              className={btnGhost}
+              onClick={() => { setForm(EMPTY_FORM); runSearch({ sortBy: "popularity" }, 1); }}
+            >
+              Réinitialiser
+            </button>
+          </div>
+        </form>
+      </section>
 
-          {error && <p className="rounded-lg bg-red-950/50 border border-red-800 text-red-300 p-3 text-sm">{error}</p>}
-
+      <main className="grid gap-8 px-4 pb-20 sm:px-8 lg:grid-cols-[minmax(0,1fr)_340px]">
+        {/* ===== Résultats ===== */}
+        <section className="min-w-0 space-y-6" aria-live="polite" aria-busy={loading}>
+          {error && <p role="alert" className="rounded-md border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-300">{error}</p>}
+          {loading && !data && (
+            <ul className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5" aria-hidden>
+              {Array.from({ length: 10 }, (_, i) => (
+                <li key={i}><div className="skeleton aspect-[2/3] rounded-md" /><div className="skeleton mt-2 h-3 w-3/4 rounded" /></li>
+              ))}
+            </ul>
+          )}
           {data && !error && (
             <>
-              <p className="text-sm text-slate-400">
-                {data.totalResults} résultat{data.totalResults > 1 ? "s" : ""} · {describe(activeFilters)}
+              <p className="text-sm text-[var(--mist)]">
+                <strong className="text-[var(--ink)]">{data.totalResults}</strong> résultat{data.totalResults > 1 ? "s" : ""}
+                <span className="ml-2">{describe(activeFilters)}</span>
               </p>
-
               {data.isEmpty ? (
-                <p className="rounded-lg border border-dashed border-slate-700 p-8 text-center text-slate-400">{data.emptyMessage}</p>
+                <div className="rounded-xl border border-dashed border-[var(--edge)] p-10 text-center">
+                  <p className="text-lg font-semibold">Aucun film trouvé</p>
+                  <p className="mt-1 text-[var(--mist)]">{data.emptyMessage}</p>
+                </div>
               ) : (
-                <ul className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                <ul className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5">
                   {data.results.map((m) => (
                     <li key={m.movieId}>
-                      <Link href={`/movies/${m.movieId}`} className="rounded-lg overflow-hidden bg-slate-900 border border-slate-800 flex flex-col h-full transition hover:border-blue-500">
-                      {m.posterUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={m.posterUrl} alt={m.title} loading="lazy" className="aspect-[2/3] w-full object-cover" />
-                      ) : (
-                        <div className="aspect-[2/3] w-full grid place-items-center bg-slate-800 text-slate-500 text-sm">Pas d&apos;affiche</div>
-                      )}
-                      <div className="p-2 space-y-1">
-                        <h3 className="text-sm font-semibold leading-tight line-clamp-2">{m.title}</h3>
-                        <p className="text-xs text-slate-400">
-                          {m.year ?? "—"} · ⭐ {m.rating.toFixed(1)}
+                      <Link href={`/movies/${m.movieId}`} className="group block" aria-label={`${m.title}${m.year ? `, ${m.year}` : ""}`}>
+                        <div className="overflow-hidden rounded-md bg-[var(--deep)] ring-1 ring-white/5 transition duration-200 group-hover:-translate-y-1 group-hover:ring-[var(--marquee)]/70">
+                          {m.posterUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={m.posterUrl} alt="" loading="lazy" className="aspect-[2/3] w-full object-cover" />
+                          ) : (
+                            <div className="flex aspect-[2/3] items-end bg-gradient-to-br from-[var(--raised)] to-[var(--deep)] p-3">
+                              <span className="line-clamp-3 text-sm font-semibold text-[var(--mist)]">{m.title}</span>
+                            </div>
+                          )}
+                        </div>
+                        <h3 className="mt-2 line-clamp-1 text-sm font-medium group-hover:text-[var(--marquee)]">{m.title}</h3>
+                        <p className="text-xs text-[var(--mist)]">
+                          <span aria-hidden className="text-[var(--marquee)]">★ </span>{m.rating.toFixed(1)}
+                          {m.year ? <span className="ml-2">{m.year}</span> : null}
                         </p>
-                      </div>
                       </Link>
                     </li>
                   ))}
                 </ul>
               )}
-
               {data.totalPages > 1 && (
-                <nav className="flex items-center justify-center gap-3 pt-2">
-                  <button className={`${btn} bg-slate-800 hover:bg-slate-700`} disabled={page <= 1 || loading} onClick={() => runSearch(activeFilters, page - 1)}>
-                    ← Précédent
+                <nav aria-label="Pagination" className="flex items-center justify-center gap-3 pt-4">
+                  <button className={`${chip} border border-[var(--edge)] px-4 py-2 text-sm hover:border-[var(--marquee)]`} disabled={page <= 1 || loading} onClick={() => runSearch(activeFilters, page - 1)}>
+                    ‹ Précédent
                   </button>
-                  <span className="text-sm text-slate-400">Page {page} / {data.totalPages}</span>
-                  <button className={`${btn} bg-slate-800 hover:bg-slate-700`} disabled={page >= data.totalPages || loading} onClick={() => runSearch(activeFilters, page + 1)}>
-                    Suivant →
+                  <span className="px-2 text-sm text-[var(--mist)]">Page <strong className="text-[var(--ink)]">{page}</strong> sur {data.totalPages}</span>
+                  <button className={`${chip} border border-[var(--edge)] px-4 py-2 text-sm hover:border-[var(--marquee)]`} disabled={page >= data.totalPages || loading} onClick={() => runSearch(activeFilters, page + 1)}>
+                    Suivant ›
                   </button>
                 </nav>
               )}
@@ -371,64 +393,61 @@ export default function DiscoverPage() {
         </section>
 
         {/* ===== CRUD : recherches sauvegardées ===== */}
-        <aside id="saved" className="scroll-mt-20 space-y-3 rounded-xl bg-slate-900/60 border border-slate-800 p-4 h-fit lg:sticky lg:top-20">
-          <h2 className="text-lg font-bold">Mes recherches sauvegardées</h2>
-
+        <aside id="saved" className="h-fit scroll-mt-20 space-y-4 rounded-xl border border-[var(--edge)] bg-[var(--deep)] p-5 lg:sticky lg:top-20">
+          <h2 className="text-xl font-bold">Mes recherches sauvegardées</h2>
           {crudMsg && (
-            <p className={`rounded-lg p-2 text-sm ${crudMsg.type === "ok" ? "bg-emerald-950/60 text-emerald-300" : "bg-red-950/60 text-red-300"}`}>
+            <p role="status" className={`rounded-md p-2.5 text-sm ${crudMsg.type === "ok" ? "border border-green-500/40 bg-green-500/10 text-green-300" : "border border-red-500/40 bg-red-500/10 text-red-300"}`}>
               {crudMsg.text}
             </p>
           )}
-
           {loggedIn === false && (
-            <p className="text-sm text-slate-400">
-              <Link href="/login" className="text-blue-400 underline">Connectez-vous</Link> pour sauvegarder vos recherches.
+            <p className="text-sm text-[var(--mist)]">
+              <Link href="/login" className="font-semibold text-[var(--marquee)] hover:underline">Connectez-vous</Link> pour sauvegarder vos recherches.
             </p>
           )}
-
           {loggedIn && (
             <>
               <form onSubmit={onSave} className="space-y-2">
-                <p className="text-xs text-slate-400">Recherche affichée : {describe(activeFilters)}</p>
+                <p className="text-xs text-[var(--mist)]">Recherche affichée : {describe(activeFilters)}</p>
                 <div className="flex gap-2">
                   <input
                     className={input}
                     placeholder="Nom (ex. Action 2020)"
+                    aria-label="Nom de la recherche à sauvegarder"
                     value={saveName}
                     maxLength={50}
                     onChange={(e) => setSaveName(e.target.value)}
                     required
                     minLength={2}
                   />
-                  <button type="submit" className={`${btn} bg-emerald-600 hover:bg-emerald-700 shrink-0`} disabled={!online}>
+                  <button type="submit" className={`${btnPrimary} shrink-0`} disabled={!online}>
                     Sauver
                   </button>
                 </div>
               </form>
-
               {saved.length === 0 ? (
-                <p className="text-sm text-slate-500">Aucune recherche sauvegardée.</p>
+                <p className="text-sm text-[var(--mist)]">Aucune recherche sauvegardée.</p>
               ) : (
-                <ul className="space-y-2">
+                <ul className="space-y-3">
                   {saved.map((s) => (
-                    <li key={s.id} className="rounded-lg bg-slate-950 border border-slate-800 p-3 space-y-2">
+                    <li key={s.id} className="space-y-3 rounded-lg border border-[var(--edge)] bg-[var(--night)] p-3.5">
                       {editingId === s.id ? (
                         <div className="flex gap-2">
-                          <input className={input} value={editName} maxLength={50} onChange={(e) => setEditName(e.target.value)} autoFocus />
-                          <button className={`${btn} bg-blue-600 hover:bg-blue-700`} onClick={() => onRename(s.id)}>OK</button>
-                          <button className={`${btn} bg-slate-800`} onClick={() => setEditingId(null)}>✕</button>
+                          <input className={input} value={editName} maxLength={50} aria-label="Nouveau nom" onChange={(e) => setEditName(e.target.value)} autoFocus />
+                          <button className={btnPrimary} onClick={() => onRename(s.id)}>OK</button>
+                          <button className={btnGhost} aria-label="Annuler" onClick={() => setEditingId(null)}>✕</button>
                         </div>
                       ) : (
-                        <>
+                        <div>
                           <p className="font-semibold">{s.name}</p>
-                          <p className="text-xs text-slate-400">{describe(s.filters)}</p>
-                        </>
+                          <p className="mt-0.5 text-xs text-[var(--mist)]">{describe(s.filters)}</p>
+                        </div>
                       )}
-                      <div className="flex flex-wrap gap-1.5 text-xs">
-                        <button className="rounded bg-blue-600 hover:bg-blue-700 px-2.5 py-1.5" onClick={() => onRun(s)}>Lancer</button>
-                        <button className="rounded bg-slate-800 hover:bg-slate-700 px-2.5 py-1.5" disabled={!online} onClick={() => { setEditingId(s.id); setEditName(s.name); }}>Renommer</button>
-                        <button className="rounded bg-slate-800 hover:bg-slate-700 px-2.5 py-1.5" disabled={!online} onClick={() => onUpdateFilters(s)} title="Remplacer ses filtres par la recherche affichée">Mettre à jour</button>
-                        <button className="rounded bg-red-700/80 hover:bg-red-700 px-2.5 py-1.5" disabled={!online} onClick={() => onDelete(s)}>Supprimer</button>
+                      <div className="flex flex-wrap gap-1.5">
+                        <button className={`${chip} bg-[var(--marquee)] text-[#1a1203] hover:bg-[#f7c766]`} onClick={() => onRun(s)}>Lancer</button>
+                        <button className={`${chip} bg-white/10 hover:bg-white/20`} disabled={!online} onClick={() => { setEditingId(s.id); setEditName(s.name); }}>Renommer</button>
+                        <button className={`${chip} bg-white/10 hover:bg-white/20`} disabled={!online} onClick={() => onUpdateFilters(s)} title="Remplacer ses filtres par la recherche affichée">Mettre à jour</button>
+                        <button className={`${chip} border border-red-500/50 text-red-300 hover:bg-red-500/10`} disabled={!online} onClick={() => onDelete(s)}>Supprimer</button>
                       </div>
                     </li>
                   ))}

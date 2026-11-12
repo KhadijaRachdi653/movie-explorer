@@ -124,7 +124,7 @@ export default function StreamingProvider({ children }: { children: ReactNode })
       {children}
       <AddToListDialog movie={addTarget} onClose={() => setAddTarget(null)} />
       <MovieQuickView movie={quickView?.movie ?? null} listId={quickView?.listId} onClose={() => setQuickView(null)} />
-      <div className="pointer-events-none fixed inset-x-0 bottom-20 z-50 sm:bottom-4 flex flex-col items-center gap-2 px-4" role="status" aria-live="polite">
+      <div className="pointer-events-none fixed inset-x-0 bottom-4 z-50 flex flex-col items-center gap-2 px-4" role="status" aria-live="polite">
         {toasts.map((t) => (
           <div
             key={t.id}

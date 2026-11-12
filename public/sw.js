@@ -101,7 +101,7 @@ self.addEventListener("push", (event) => {
       body: data.body || "Une action a été réalisée sur la plateforme.",
       icon: "/icons/icon-192.png",       // Utilisation de vos icônes existantes
       badge: "/icons/icon-192.png",      // Icône d'état système
-      vibrate:,          // Séquence de vibration mobile
+      vibrate: [100, 50, 100], // Séquence de vibration mobile
       data: {
         userId: data.userId              // Mémorisation de l'ID pour la redirection
       },

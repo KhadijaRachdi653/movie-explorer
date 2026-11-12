@@ -1,105 +1,15 @@
-import { auth, signOut } from "@/lib/auth";
-import Link from "next/link";
+import { auth } from "@/lib/auth";
+import { listMovies, type MovieDto } from "@/modules/movies/movie.service";
+import HomeView from "@/components/home/HomeView";
 
+export const dynamic = "force-dynamic";
+
+// Accueil : charge la session et le catalogue (Module 2) ; l'affichage est dans HomeView.
+// La déconnexion se fait depuis l'en-tête commun (SiteHeader).
 export default async function HomePage() {
   const session = await auth();
   const isAdmin = (session?.user as { role?: string } | undefined)?.role === "admin";
+  const { movies } = await listMovies(1, 60).catch(() => ({ movies: [] as MovieDto[] }));
 
-  const handleSignOut = async () => {
-    "use server";
-    await signOut({ redirectTo: "/" });
-  };
-
-  return (
-    <div className="min-h-screen bg-slate-950 text-white">
-      <header className="border-b border-slate-800 p-4 flex justify-between items-center bg-slate-900/50 backdrop-blur">
-        <div className="flex items-center gap-2 font-bold text-xl text-blue-500">
-          🎬 Movie Explorer
-        </div>
-
-        <nav className="flex gap-4 items-center">
-          <Link href="/movies" className="text-sm text-slate-200 hover:text-white">
-            Catalogue
-          </Link>
-          <Link href="/recommendations" className="text-sm text-slate-200 hover:text-white">
-            Pour vous
-          </Link>
-          {isAdmin && (
-            <Link href="/admin/movies" className="text-sm text-slate-200 hover:text-white">
-              Gérer les films
-            </Link>
-          )}
-          {session ? (
-            <>
-              <span className="text-sm text-slate-400">
-                Bonjour, <strong className="text-white">{session.user?.name}</strong> !
-              </span>
-
-              <Link href="/profile/ratings" className="text-sm text-slate-200 hover:text-white">
-                Mes avis
-              </Link>
-
-              <Link href="/lists" className="text-sm text-slate-200 hover:text-white">
-                Mes listes
-              </Link>
-
-              <Link href="/profile" className="text-sm text-slate-200 hover:text-white underline">
-                Mon Profil
-              </Link>
-
-              <form action={handleSignOut} className="inline">
-                <button
-                  type="submit"
-                  className="text-sm bg-red-600/80 hover:bg-red-700 text-white px-3 py-1.5 rounded-md transition-colors"
-                >
-                  Déconnexion
-                </button>
-              </form>
-            </>
-          ) : (
-            <>
-              <Link href="/login" className="text-sm hover:underline">
-                Se connecter
-              </Link>
-              <Link href="/register" className="text-sm bg-blue-600 hover:bg-blue-700 px-3 py-1.5 rounded-md transition-colors">
-                Créer un compte
-              </Link>
-            </>
-          )}
-        </nav>
-      </header>
-
-      <main className="max-w-7xl mx-auto p-6 space-y-8">
-        {session && (
-          <div className="p-4 bg-blue-950/40 border border-blue-800/50 text-blue-200 rounded-lg text-sm">
-            Ravi de vous revoir, <strong>{session.user?.name}</strong> ! Vous pouvez maintenant gérer vos listes de films favoris depuis votre espace.
-          </div>
-        )}
-
-        <section className="text-center py-12 space-y-4">
-          <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">
-            Explorez des milliers de films
-          </h1>
-          <p className="text-slate-400 max-w-xl mx-auto">
-            Trouvez les dernières sorties, organisez vos favoris et consultez les avis de la communauté.
-          </p>
-
-          <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <Link
-              href="/movies"
-              className="inline-block border border-slate-700 hover:border-blue-500 text-white font-semibold px-6 py-3 rounded-lg transition-colors"
-            >
-              🎞️ Voir le catalogue
-            </Link>
-            <Link
-              href="/discover"
-              className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg transition-colors"
-            >
-              🔎 Découvrir des films
-            </Link>
-          </div>
-        </section>
-      </main>
-    </div>
-  );
+  return <HomeView movies={movies} userName={session?.user?.name ?? null} isAdmin={isAdmin} />;
 }

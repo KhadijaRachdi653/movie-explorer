@@ -1,4 +1,4 @@
-const CACHE_NAME = "movie-explorer-v8"; // v8 : styles de la page hors ligne en cache (v7 : page hors ligne, v6 : icônes, v5 : purge /api/)
+const CACHE_NAME = "movie-explorer-v9"; // v9 : nouvelle page hors ligne (v8 : styles, v7 : page hors ligne, v6 : icônes, v5 : purge /api/)
 const OFFLINE_URL = "/offline";
 
 // Fichiers mis en cache dès l'installation : la page hors ligne doit être disponible SANS visite préalable.

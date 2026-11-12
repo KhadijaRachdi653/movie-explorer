@@ -101,6 +101,19 @@ input:focus-visible, textarea:focus-visible, select:focus-visible {
   .poster-lane, .hero-text, .genre-grid > li { animation: none; }
 }
 
+/* Cinéma : amorce de pellicule, bobine, lumière du projecteur (pages hors ligne, 404, erreur, chargement) */
+.leader-sweep { animation: leader-sweep 1s linear infinite; }
+@keyframes leader-sweep { to { transform: rotate(360deg); } }
+.leader-number { animation: leader-number 1s ease-out both; }
+@keyframes leader-number { from { opacity: 0; transform: scale(1.25); } 15% { opacity: 1; } to { opacity: 1; transform: scale(1); } }
+.leader-glow { animation: projector-flicker 4s ease-in-out infinite; }
+@keyframes projector-flicker { 0%, 100% { opacity: 0.85; } 45% { opacity: 1; } 50% { opacity: 0.7; } 55% { opacity: 1; } }
+.reel-spin { animation: reel-spin 1.6s linear infinite; }
+@keyframes reel-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .leader-sweep, .leader-number, .leader-glow, .reel-spin { animation: none; }
+}
+
 /* Chargement : bloc animé (disponible sur toutes les pages) */
 .skeleton {
   background: linear-gradient(100deg, var(--deep) 30%, var(--raised) 50%, var(--deep) 70%);

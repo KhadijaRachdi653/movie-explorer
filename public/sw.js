@@ -1,4 +1,4 @@
-const CACHE_NAME = "movie-explorer-v5"; // v5 : purge des réponses /api/ mises en cache par erreur
+const CACHE_NAME = "movie-explorer-v6"; // v6 : nouvelles icônes (v5 : purge des réponses /api/)
 const OFFLINE_URL = "/offline";
 
 // 💡 CORRECTION : On réduit les assets obligatoires à l'installation pour éviter le blocage 404 du dev

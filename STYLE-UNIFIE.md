@@ -40,6 +40,9 @@ Base : `feature/zina-reviews-and-cinebot`. **Aucune logique modifiée** : action
 ## Correctif : service worker
 `public/sw.js` ligne 104 : `vibrate:,` (erreur de syntaxe) → `vibrate: [100, 50, 100],`. Le navigateur refusait tout le service worker : plus de mode hors ligne. **Erreur présente aussi sur `feature/zina-reviews-and-cinebot`.**
 
+## Icônes de l'application
+`public/icons/icon-192.png`, `icon-512.png`, `maskable-icon-512.png` : l’image provisoire (un oiseau) est remplacée par une bobine de film dorée sur fond bleu nuit. Le manifest déclare l'icône masquable et les couleurs du thème (`#070b16`). Cache du service worker passé en `v6` pour remplacer les anciennes icônes.
+
 ## Pourquoi les autres pages changent sans être modifiées
 Elles utilisent les classes Tailwind `bg-slate-*`, `text-blue-*`… Ces couleurs sont redéfinies **une seule fois** dans `globals.css` : chaque page garde exactement son code.
 

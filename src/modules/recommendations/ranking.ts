@@ -37,7 +37,7 @@ export interface UserSignals {
  * Construit les signaux utilisateur à partir de ses films.
  * `alsoExclude` : films à ne jamais recommander sans en faire des signaux (ex. films mal notés, déjà vus).
  */
-export function buildSignals(movies: SignalMovie[], alsoExclude: string[] = []): UserSignals {
+export function buildSignals(movies: SignalMovie[], alsoExclude: string[] = [], extraGenres: string[] = []): UserSignals {
   const byRecent = [...movies].sort((a, b) => new Date(b.addedAt).getTime() - new Date(a.addedAt).getTime());
 
   const seeds: UserSignals["seeds"] = [];
@@ -48,6 +48,8 @@ export function buildSignals(movies: SignalMovie[], alsoExclude: string[] = []):
 
   const genreCount = new Map<string, number>();
   for (const m of movies) for (const g of m.genres) genreCount.set(g, (genreCount.get(g) ?? 0) + 1);
+  // Genres des recherches sauvegardées (Module 5) : comptent comme un film de ce genre
+  for (const g of extraGenres) genreCount.set(g, (genreCount.get(g) ?? 0) + 1);
   const topGenres = [...genreCount.entries()]
     .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
     .slice(0, TOP_GENRES_COUNT)

@@ -1,9 +1,11 @@
-const CACHE_NAME = "movie-explorer-v6"; // v6 : nouvelles icônes (v5 : purge des réponses /api/)
+const CACHE_NAME = "movie-explorer-v8"; // v8 : styles de la page hors ligne en cache (v7 : page hors ligne, v6 : icônes, v5 : purge /api/)
 const OFFLINE_URL = "/offline";
 
-// 💡 CORRECTION : On réduit les assets obligatoires à l'installation pour éviter le blocage 404 du dev
+// Fichiers mis en cache dès l'installation : la page hors ligne doit être disponible SANS visite préalable.
+// La page d'accueil (dynamique : base de données, session) n'est pas mise en cache ici.
 const PRECACHE_ASSETS = [
-  "/",
+  OFFLINE_URL,
+  "/manifest.webmanifest",
   "/icons/icon-192.png",
   "/icons/icon-512.png",
 ];
@@ -11,8 +13,20 @@ const PRECACHE_ASSETS = [
 // 1. Installation du Service Worker et mise en cache des fichiers de base
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(PRECACHE_ASSETS);
+    // Installation tolérante : un fichier en échec n'annule pas toute l'installation (avant : addAll => AbortError)
+    caches.open(CACHE_NAME).then(async (cache) => {
+      await Promise.allSettled(PRECACHE_ASSETS.map((url) => cache.add(url)));
+      // Styles et scripts utilisés par la page hors ligne : sans eux, elle s'affiche sans mise en forme
+      try {
+        const page = await cache.match(OFFLINE_URL);
+        if (page) {
+          const html = await page.text();
+          const assets = [...new Set([...html.matchAll(/(?:href|src)="(\/_next\/static\/[^"]+)"/g)].map((m) => m[1]))];
+          await Promise.allSettled(assets.map((url) => cache.add(url)));
+        }
+      } catch {
+        // la page hors ligne reste disponible, au pire sans mise en forme
+      }
     })
   );
   self.skipWaiting();
@@ -38,6 +52,12 @@ self.addEventListener("fetch", (event) => {
 
   if (request.method !== "GET") return;
 
+  // Styles et scripts de Next.js : réseau d'abord (toujours à jour en ligne), cache seulement hors ligne
+  if (request.url.includes("/_next/static/")) {
+    event.respondWith(fetch(request).catch(async () => (await caches.match(request)) || Response.error()));
+    return;
+  }
+
   // 💡 EXCLUSION CRUCIALE : On laisse passer TOUT le trafic de dev Next.js/Turbopack/Auth
   if (
     request.url.includes("_next") ||
@@ -55,8 +75,16 @@ self.addEventListener("fetch", (event) => {
   // Gestion de la navigation principale (Changement de page)
   if (request.mode === "navigate") {
     event.respondWith(
-      fetch(request).catch(() => {
-        return caches.match(OFFLINE_URL) || caches.match("/");
+      fetch(request).catch(async () => {
+        // caches.match renvoie une promesse : il faut l'attendre avant de tester le résultat
+        return (
+          (await caches.match(OFFLINE_URL)) ||
+          (await caches.match("/")) ||
+          new Response("<h1>Hors ligne</h1><p>Vérifiez votre connexion puis réessayez.</p>", {
+            status: 503,
+            headers: { "Content-Type": "text/html; charset=utf-8" },
+          })
+        );
       })
     );
     return;

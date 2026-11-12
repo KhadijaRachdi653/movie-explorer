@@ -89,6 +89,9 @@ export async function changePassword(
 
     await connectToDatabase();
     const dbUser = await User.findById(user.id);
+    if (!dbUser) {
+      return { error: "Utilisateur introuvable." };
+    }
 
     const isMatch = await bcrypt.compare(currentPassword, dbUser.password);
     if (!isMatch) {
@@ -138,6 +141,7 @@ export async function toggleSubscription(): Promise<ActionState> {
     // Envoi asynchrone parallélisé vers tous les terminaux enregistrés
     const pushPromises = activeSubscriptions.map(async (sub) => {
       try {
+        if (!sub.keys?.p256dh || !sub.keys?.auth) return; // abonnement incomplet : ignoré
         const pushTarget = {
           endpoint: sub.endpoint,
           keys: {

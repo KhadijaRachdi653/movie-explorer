@@ -1,6 +1,7 @@
 "use client";
 
 import Poster from "./Poster";
+import FavoriteBadge from "@/components/collection/FavoriteBadge";
 import { useStreaming } from "./context";
 import type { CardMovie } from "./movie";
 
@@ -19,6 +20,7 @@ export default function MovieCard({
 
   return (
     <div className="group relative">
+      <FavoriteBadge movieId={movie.movieId} />
       <button
         type="button"
         onClick={() => openMovie(movie, listId)}

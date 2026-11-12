@@ -3,6 +3,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import FavoriteBadge from "@/components/collection/FavoriteBadge";
 
 type GenreMovie = { id: string; title: string; posterUrl: string; year: number; rating: number };
 
@@ -42,6 +43,7 @@ export default function GenreExplorer({ genres }: { genres: { name: string; coun
         {current.movies.slice(0, 12).map((m, i) => (
           <li key={m.id} style={{ animationDelay: `${i * 35}ms` }}>
             <Link href={`/movies/${m.id}`} className="group relative block overflow-hidden rounded-md ring-1 ring-white/5 transition duration-200 hover:-translate-y-1 hover:ring-[var(--marquee)]/70" aria-label={`${m.title}, ${m.year}`}>
+              <FavoriteBadge movieId={m.id} />
               <img src={m.posterUrl} alt="" loading="lazy" className="aspect-[2/3] w-full object-cover" />
               <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 to-transparent p-2.5 pt-10 text-xs opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
                 <span className="line-clamp-2 font-semibold text-[var(--ink)]">{m.title}</span>

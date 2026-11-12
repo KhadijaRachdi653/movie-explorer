@@ -4,6 +4,11 @@ export const metadata = {
   title: "Se connecter",
 };
 
-export default function LoginPage() {
-  return <LoginForm />;
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ registered?: string; activated?: string }>;
+}) {
+  const { registered, activated } = await searchParams;
+  return <LoginForm registered={registered === "true"} activated={activated === "true"} />;
 }

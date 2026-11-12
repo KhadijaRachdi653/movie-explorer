@@ -11,6 +11,15 @@ export async function POST(req: Request) {
 
     if (!email || !username || !password) {
       return NextResponse.json({ error: "Tous les champs sont obligatoires." }, { status: 400 });
+
+    // Même règle que l'inscription par action serveur (authActions.ts) : validation côté serveur
+    const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{6,10}$/;
+    if (!passwordRegex.test(password)) {
+      return NextResponse.json(
+        { error: "Le mot de passe doit contenir entre 6 et 10 caractères, inclure au moins une majuscule, un chiffre et un caractère spécial." },
+        { status: 400 },
+      );
+    }
     }
 
     await connectToDatabase();

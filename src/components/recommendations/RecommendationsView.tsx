@@ -8,6 +8,7 @@ import ListFormDialog from "./ListFormDialog";
 import ListRecoRow from "./ListRecoRow";
 import MovieRow from "./MovieRow";
 import Top10Row from "./Top10Row";
+import SourcesBanner from "./SourcesBanner";
 import { useStreaming } from "./context";
 import { genreRow } from "./genres";
 import { fromRecommended, type CardMovie } from "./movie";
@@ -37,6 +38,18 @@ export default function RecommendationsView() {
   const { session, lists } = useStreaming();
   const personal = useApiData<RecommendationsResponse>("/api/recommendations?limit=40");
   const trending = useApiData<RecommendationsResponse>("/api/recommendations?trending=true&limit=20");
+  // Favoris (Module 4, Amine) : affichés dans leur propre rangée
+  const favorites = useApiData<{ items: { movieId: string; title: string; posterUrl?: string | null; year?: number; rating?: number; genres?: string[] }[] }>(
+    session.status === "user" ? "/api/collection?favorite=true" : null
+  );
+  const favoriteMovies: CardMovie[] = (favorites.data?.items ?? []).map((f) => ({
+    movieId: f.movieId,
+    title: f.title,
+    posterUrl: f.posterUrl ?? null,
+    year: f.year ?? null,
+    rating: f.rating,
+    genres: f.genres ?? [],
+  }));
   const [creating, setCreating] = useState(false);
 
   const isPersonal = personal.data?.source === "personal";
@@ -81,6 +94,8 @@ export default function RecommendationsView() {
       )}
 
       <div className={`space-y-10 pb-20 ${isPersonal ? "relative sm:-mt-10" : ""}`}>
+        {personal.data?.basedOn && <SourcesBanner basedOn={personal.data.basedOn} />}
+        {favoriteMovies.length > 0 && <MovieRow title="Vos favoris" movies={favoriteMovies} />}
         {personal.loading ? (
           <MovieRow title="Chargement des recommandations" movies={[]} loading />
         ) : (

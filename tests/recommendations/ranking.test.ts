@@ -121,3 +121,17 @@ describe("notes (Module 3)", () => {
     expect(m.reason).toBe("Parce que vous avez ajouté Fight Club");
   });
 });
+
+describe("signaux des autres modules", () => {
+  it("les genres des recherches sauvegardées (Module 5) comptent dans les genres préférés", () => {
+    const films = [{ movieId: "a", title: "A", genres: ["Drame"], director: "", addedAt: "2026-01-01" }];
+    const s = buildSignals(films, [], ["Animation", "Animation", "Comédie"]);
+    expect(s.topGenres[0]).toBe("Animation");
+    expect(s.topGenres).toContain("Drame");
+  });
+  it("les films déjà vus (collection « Vu », Module 4) sont exclus sans être des signaux", () => {
+    const s = buildSignals([{ movieId: "a", title: "A", genres: [], director: "", addedAt: "2026-01-01" }], ["vu1"]);
+    expect(s.excludeIds.has("vu1")).toBe(true);
+    expect(s.seeds.map((x) => x.movieId)).toEqual(["a"]);
+  });
+});

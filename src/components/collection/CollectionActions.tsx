@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { notifyFavoritesChanged } from "./favorites";
 import { COLLECTION_STATUSES, type CollectionMovieDto, type CollectionStatus } from "@/modules/collection/collection.types";
 
 const STATUS_LABEL: Record<CollectionStatus, string> = { planned: "À voir", watching: "En cours", watched: "Vu" };
@@ -61,6 +62,7 @@ export default function CollectionActions({ movie }: { movie: Movie }) {
         ? await callApi<CollectionMovieDto>(`/api/collection/${item.id}`, "PATCH", changes)
         : await callApi<CollectionMovieDto>("/api/collection", "POST", { movie: moviePayload, status: changes.status ?? "planned", favorite: changes.favorite ?? false });
       setItem(updated);
+      notifyFavoritesChanged();
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -75,6 +77,7 @@ export default function CollectionActions({ movie }: { movie: Movie }) {
     try {
       await callApi(`/api/collection/${item.id}`, "DELETE");
       setItem(null);
+      notifyFavoritesChanged();
     } catch (err) {
       setError((err as Error).message);
     } finally {

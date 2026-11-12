@@ -40,7 +40,18 @@ export interface RecommendedMovie {
   match: number | null; // compatibilité 55–99 % (recommandations personnalisées uniquement)
 }
 
+// Sources utilisées pour les recommandations personnalisées (une par module de l'équipe)
+export interface RecommendationSources {
+  listFilms: number; // Module 6 : films de vos listes
+  favorites: number; // Module 4 : favoris
+  watchlist: number; // Module 4 : films « À voir » / « En cours »
+  watched: number; // Module 4 : films « Vu » (exclus)
+  likedRatings: number; // Module 3 : films notés 4 ou 5 sur 5
+  savedSearchGenres: string[]; // Module 5 : genres des recherches sauvegardées
+}
+
 export interface RecommendationsResponse {
   source: "personal" | "list" | "similar" | "trending";
   results: RecommendedMovie[];
+  basedOn?: RecommendationSources; // seulement pour « personal »
 }

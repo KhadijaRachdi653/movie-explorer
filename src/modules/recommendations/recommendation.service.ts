@@ -4,7 +4,7 @@ import CustomList, { type CustomListDoc } from "./customList.model";
 import { getList } from "./customList.service";
 import { getCatalogMap, getCatalogMovies, MIN_COMMUNITY_VOTES, type CatalogMovie } from "./catalogue";
 import { buildSignals, rankCandidates, similarTo, toRecommendedMovie, type CandidateGroup, type SignalMovie } from "./ranking";
-import type { RecommendationsResponse } from "./types";
+import type { RecommendationSources, RecommendationsResponse } from "./types";
 import { ApiError } from "./errors";
 
 interface UserFilm {
@@ -14,21 +14,36 @@ interface UserFilm {
 }
 
 /**
- * Films « signaux » de l'utilisateur, tous identifiés par leur id du catalogue (Module 2) :
- * - les films de ses listes personnalisées (Module 6) ;
- * - ses favoris (Module 4, collection `collectionItems`, `favorite: true`) ;
- * - les films qu'il a bien notés (Module 3, collection `ratings`, note ≥ 4/5).
- * Favoris et notes sont lus directement en base pour ne pas dépendre du code des autres modules.
+ * Signaux de l'utilisateur, tirés de chaque partie de l'équipe (identifiants du catalogue, Module 2) :
+ * - Module 6 : les films de ses listes personnalisées ;
+ * - Module 4 (collection) : favoris et films « À voir » / « En cours » = signaux ; films « Vu » = exclus ;
+ * - Module 3 (notes) : films notés 4 ou 5 sur 5 = signaux ; tout film déjà noté = exclu ;
+ * - Module 5 (recherches sauvegardées) : leurs genres comptent dans les genres préférés.
+ * Les données des autres modules sont lues directement en base pour ne pas dépendre de leur code.
  */
-async function getUserSignalMovies(userId: string): Promise<{ movies: SignalMovie[]; alreadySeen: string[] }> {
+async function getUserSignalMovies(
+  userId: string
+): Promise<{ movies: SignalMovie[]; alreadySeen: string[]; extraGenres: string[]; basedOn: RecommendationSources }> {
   await dbConnect();
   const lists = await CustomList.find({ userId }, "movies").lean<Pick<CustomListDoc, "movies">[]>();
   const fromLists: UserFilm[] = lists.flatMap((l) => l.movies.map((m) => ({ movieId: m.movieId, addedAt: m.addedAt })));
-  const [favorites, rated] = await Promise.all([getFavoriteFilms(userId), getRatedFilms(userId)]);
+  const [collection, rated, savedSearchGenres] = await Promise.all([getCollectionFilms(userId), getRatedFilms(userId), getSavedSearchGenres(userId)]);
   // titre vide : la raison devient « D'après les films que vous avez bien notés »
-  const films = [...fromLists, ...favorites, ...rated.liked.map((f) => ({ ...f, title: "" }))];
-  // Films déjà notés (même mal) : déjà vus, donc jamais recommandés
-  return { movies: await withCatalogDetails(films), alreadySeen: rated.ratedIds };
+  const films = [...fromLists, ...collection.favorites, ...collection.watchlist, ...rated.liked.map((f) => ({ ...f, title: "" }))];
+  return {
+    movies: await withCatalogDetails(films),
+    // Déjà vus : films notés (même mal) et films marqués « Vu » dans la collection
+    alreadySeen: [...rated.ratedIds, ...collection.watchedIds],
+    extraGenres: savedSearchGenres,
+    basedOn: {
+      listFilms: fromLists.length,
+      favorites: collection.favorites.length,
+      watchlist: collection.watchlist.length,
+      watched: collection.watchedIds.length,
+      likedRatings: rated.liked.length,
+      savedSearchGenres: [...new Set(savedSearchGenres)],
+    },
+  };
 }
 
 // Complète les films de l'utilisateur avec leurs genres et réalisateur (films retirés du catalogue ignorés)
@@ -68,23 +83,48 @@ async function getRatedFilms(userId: string): Promise<{ liked: UserFilm[]; rated
   }
 }
 
-async function getFavoriteFilms(userId: string): Promise<UserFilm[]> {
+type CollectionDocLite = { movie?: { movieId?: unknown; title?: string }; favorite?: boolean; status?: string; updatedAt?: Date };
+
+async function getCollectionFilms(userId: string): Promise<{ favorites: UserFilm[]; watchlist: UserFilm[]; watchedIds: string[] }> {
+  const empty = { favorites: [], watchlist: [], watchedIds: [] };
+  const db = mongoose.connection.db;
+  if (!db || !Types.ObjectId.isValid(userId)) return empty;
+  try {
+    const items = await db
+      .collection<CollectionDocLite>("collectionItems")
+      .find({ userId: new Types.ObjectId(userId) }, { projection: { movie: 1, favorite: 1, status: 1, updatedAt: 1 } })
+      .sort({ updatedAt: -1 })
+      .limit(200)
+      .toArray();
+    const valid = items.flatMap((i) => {
+      const id = i.movie?.movieId;
+      return typeof id === "string" && isValidObjectId(id) ? [{ item: i, film: { movieId: id, title: i.movie?.title, addedAt: i.updatedAt ?? new Date(0) } }] : [];
+    });
+    return {
+      favorites: valid.filter((v) => v.item.favorite).map((v) => v.film),
+      watchlist: valid.filter((v) => !v.item.favorite && (v.item.status === "planned" || v.item.status === "watching")).map((v) => v.film),
+      watchedIds: valid.filter((v) => v.item.status === "watched").map((v) => v.film.movieId),
+    };
+  } catch (err) {
+    console.error("Lecture de la collection impossible :", err);
+    return empty; // la collection améliore les recommandations mais ne doit jamais les bloquer
+  }
+}
+
+// Recherches sauvegardées (Module 5) : genres choisis par l'utilisateur
+async function getSavedSearchGenres(userId: string): Promise<string[]> {
   const db = mongoose.connection.db;
   if (!db || !Types.ObjectId.isValid(userId)) return [];
   try {
-    const items = await db
-      .collection<{ movie?: { movieId?: unknown; title?: string }; updatedAt?: Date }>("collectionItems")
-      .find({ userId: new Types.ObjectId(userId), favorite: true }, { projection: { movie: 1, updatedAt: 1 } })
-      .sort({ updatedAt: -1 })
+    const searches = await db
+      .collection<{ filters?: { genre?: string } }>("savedSearches")
+      .find({ userId: { $in: [new Types.ObjectId(userId), userId] } }, { projection: { "filters.genre": 1 } })
       .limit(50)
       .toArray();
-    return items.flatMap((i) => {
-      const id = i.movie?.movieId;
-      return typeof id === "string" && isValidObjectId(id) ? [{ movieId: id, title: i.movie?.title, addedAt: i.updatedAt ?? new Date(0) }] : [];
-    });
+    return searches.map((s) => s.filters?.genre?.trim()).filter((g): g is string => Boolean(g));
   } catch (err) {
-    console.error("Lecture des favoris impossible :", err);
-    return []; // les favoris améliorent les recommandations mais ne doivent jamais les bloquer
+    console.error("Lecture des recherches sauvegardées impossible :", err);
+    return [];
   }
 }
 
@@ -120,16 +160,18 @@ export async function getPersonalRecommendations(userId: string | null, limit: n
   const catalogue = await getCatalogMovies();
   let signalMovies: SignalMovie[];
   let alreadySeen: string[] = [];
+  let extraGenres: string[] = [];
+  let basedOn: RecommendationSources | undefined;
   if (listId) {
     const list = await getList(listId, userId);
     signalMovies = await withCatalogDetails(list.movies.map((m) => ({ movieId: m.movieId, addedAt: new Date(m.addedAt) })));
   } else {
     if (!userId) return trending(catalogue, limit);
-    ({ movies: signalMovies, alreadySeen } = await getUserSignalMovies(userId));
+    ({ movies: signalMovies, alreadySeen, extraGenres, basedOn } = await getUserSignalMovies(userId));
   }
 
-  const signals = buildSignals(signalMovies, alreadySeen);
-  if (signals.seeds.length === 0) return trending(catalogue, limit, signals.excludeIds);
+  const signals = buildSignals(signalMovies, alreadySeen, extraGenres);
+  if (signals.seeds.length === 0) return { ...trending(catalogue, limit, signals.excludeIds), basedOn };
 
   const groups: CandidateGroup[] = signals.seeds.map((s) => ({ seedTitle: s.title, movies: similarTo(s, catalogue) }));
   if (signals.topGenres.length > 0) {
@@ -137,5 +179,7 @@ export async function getPersonalRecommendations(userId: string | null, limit: n
   }
 
   const results = rankCandidates(groups, signals, limit);
-  return results.length > 0 ? { source: listId ? "list" : "personal", results } : trending(catalogue, limit, signals.excludeIds);
+  return results.length > 0
+    ? { source: listId ? "list" : "personal", results, basedOn }
+    : { ...trending(catalogue, limit, signals.excludeIds), basedOn };
 }

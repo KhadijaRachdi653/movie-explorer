@@ -6,7 +6,8 @@ import Link from "next/link";
 import { verifyUserCredentials } from "@/actions/authActions";
 import { authButton, authField, authLabel, authLink } from "./authStyles";
 
-export default function LoginForm() {
+// registered / activated : messages après l'inscription et l'activation par e-mail (Module 1, Khadija)
+export default function LoginForm({ registered = false, activated = false }: { registered?: boolean; activated?: boolean }) {
   const router = useRouter();
 
   const [state, formAction, isPending] = useActionState(verifyUserCredentials, {
@@ -25,6 +26,17 @@ export default function LoginForm() {
     <div className="rounded-xl border border-[var(--edge)] bg-[var(--deep)]/90 p-7 shadow-2xl shadow-black/50 backdrop-blur sm:p-9">
       <h1 className="text-3xl font-extrabold tracking-tight">Bon retour parmi nous</h1>
       <p className="mt-2 text-[var(--mist)]">Connectez-vous pour retrouver vos listes et vos recommandations.</p>
+
+      {registered && (
+        <p role="status" className="mt-6 rounded-md border border-green-500/40 bg-green-500/10 p-3 text-sm font-medium text-green-300">
+          ✓ Inscription réussie ! Activez votre compte grâce à l’e-mail qui vient de vous être envoyé.
+        </p>
+      )}
+      {activated && (
+        <p role="status" className="mt-6 rounded-md border border-green-500/40 bg-green-500/10 p-3 text-sm font-medium text-green-300">
+          ✓ Votre compte est activé. Vous pouvez vous connecter.
+        </p>
+      )}
 
       <form action={formAction} className="mt-8 space-y-5">
         <div>

@@ -5,6 +5,7 @@
 
 import { useCallback, useEffect, useState, useSyncExternalStore, type FormEvent } from "react";
 import Link from "next/link";
+import FavoriteBadge from "@/components/collection/FavoriteBadge";
 
 type SortOption = "popularity" | "rating" | "release_date" | "title";
 
@@ -357,7 +358,8 @@ export default function DiscoverPage() {
                   {data.results.map((m) => (
                     <li key={m.movieId}>
                       <Link href={`/movies/${m.movieId}`} className="group block" aria-label={`${m.title}${m.year ? `, ${m.year}` : ""}`}>
-                        <div className="overflow-hidden rounded-md bg-[var(--deep)] ring-1 ring-white/5 transition duration-200 group-hover:-translate-y-1 group-hover:ring-[var(--marquee)]/70">
+                        <div className="relative overflow-hidden rounded-md bg-[var(--deep)] ring-1 ring-white/5 transition duration-200 group-hover:-translate-y-1 group-hover:ring-[var(--marquee)]/70">
+                          <FavoriteBadge movieId={m.movieId} />
                           {m.posterUrl ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img src={m.posterUrl} alt="" loading="lazy" className="aspect-[2/3] w-full object-cover" />

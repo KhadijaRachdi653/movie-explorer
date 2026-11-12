@@ -8,7 +8,6 @@ import ListFormDialog from "./ListFormDialog";
 import ListRecoRow from "./ListRecoRow";
 import MovieRow from "./MovieRow";
 import Top10Row from "./Top10Row";
-import SourcesBanner from "./SourcesBanner";
 import { useStreaming } from "./context";
 import { genreRow } from "./genres";
 import { fromRecommended, type CardMovie } from "./movie";
@@ -94,7 +93,6 @@ export default function RecommendationsView() {
       )}
 
       <div className={`space-y-10 pb-20 ${isPersonal ? "relative sm:-mt-10" : ""}`}>
-        {personal.data?.basedOn && <SourcesBanner basedOn={personal.data.basedOn} />}
         {favoriteMovies.length > 0 && <MovieRow title="Vos favoris" movies={favoriteMovies} />}
         {personal.loading ? (
           <MovieRow title="Chargement des recommandations" movies={[]} loading />

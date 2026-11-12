@@ -5,17 +5,19 @@ async function getPopularMovies() {
   if (!apiKey) return [];
 
   try {
-    const res = await fetch(`https://api.themoviedb.org/3/movie/popular?api_key=${apiKey}&language=fr-FR&page=1`,
-       { next: { revalidate: 3600 } });
+    const res = await fetch(
+      `https://api.themoviedb.org/3/movie/popular?api_key=${apiKey}&language=fr-FR&page=1`,
+      { next: { revalidate: 3600 } },
+    );
 
     /*const res = await fetch(
       'https://api.themoviedb.org/3/movie/popular?api_key=${apiKey}&language=fr-FR&page=1',
       { next: { revalidate: 3600 } }
     );*/
     if (!res.ok) {
-          console.error(`Erreur API TMDB: Statut ${res.status}`);
-          return [];
-        }
+      console.error(`Erreur API TMDB: Statut ${res.status}`);
+      return [];
+    }
     const data = await res.json();
     return data.results || [];
   } catch (error) {
@@ -40,15 +42,20 @@ export default async function Home() {
     <main className="mx-auto max-w-7xl p-6 transition-all">
       <div className="mb-6">
         <span className="text-xs font-bold tracking-widest text-[var(--accent)] uppercase">
-          BONSOIR, {session?.user?.name ? session.user.name.split(" ")[0] : "INVITÉ"}
+          BONSOIR,{" "}
+          {session?.user?.name ? session.user.name.split(" ")[0] : "INVITÉ"}
         </span>
         <h1 className="text-3xl font-extrabold tracking-tight mt-1 leading-tight text-[var(--text-primary)]">
-          Quel film va vous<br />faire vibrer ce soir ?
+          Quel film va vous
+          <br />
+          faire vibrer ce soir ?
         </h1>
       </div>
 
       <div className="relative mb-6 max-w-xl">
-        <span className="absolute inset-y-0 left-0 flex items-center pl-4 opacity-50">🔍</span>
+        <span className="absolute inset-y-0 left-0 flex items-center pl-4 opacity-50">
+          🔍
+        </span>
         <input
           type="text"
           placeholder="Rechercher un film, un acteur..."
@@ -82,17 +89,27 @@ export default async function Home() {
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
         <div className="absolute inset-0 p-6 flex flex-col justify-end text-white">
-          <span className="text-[10px] font-extrabold text-[var(--accent-light)] tracking-widest uppercase">🎬 À LA UNE</span>
-          <h2 className="text-3xl font-black uppercase tracking-tight">{featuredMovie.title}</h2>
+          <span className="text-[10px] font-extrabold text-[var(--accent-light)] tracking-widest uppercase">
+            🎬 À LA UNE
+          </span>
+          <h2 className="text-3xl font-black uppercase tracking-tight">
+            {featuredMovie.title}
+          </h2>
           <div className="flex gap-2 mt-3">
-            <button className="px-4 py-2 bg-white text-slate-950 font-bold rounded-xl text-xs active:scale-95 transition-transform cursor-pointer">▶ Bande-annonce</button>
+            <button className="px-4 py-2 bg-white text-slate-950 font-bold rounded-xl text-xs active:scale-95 transition-transform cursor-pointer">
+              ▶ Bande-annonce
+            </button>
           </div>
         </div>
       </div>
 
       <div className="flex justify-between items-center mb-6">
-        <h3 className="text-2xl font-black tracking-tight">Choisis pour vous</h3>
-        <button className="text-xs font-bold text-[var(--accent)] hover:underline cursor-pointer">Tout voir</button>
+        <h3 className="text-2xl font-black tracking-tight">
+          Choisis pour vous
+        </h3>
+        <button className="text-xs font-bold text-[var(--accent)] hover:underline cursor-pointer">
+          Tout voir
+        </button>
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
@@ -108,17 +125,23 @@ export default async function Home() {
               />
               <div className="absolute top-3 left-3 px-2 py-1 bg-black/60 backdrop-blur-md rounded-lg flex items-center gap-1">
                 <span className="text-yellow-400 text-xs">⭐</span>
-                <span className="text-white text-[10px] font-bold">{movie.vote_average?.toFixed(1)}</span>
+                <span className="text-white text-[10px] font-bold">
+                  {movie.vote_average?.toFixed(1)}
+                </span>
               </div>
               <div className="absolute left-3 bottom-1">
                 <span className="text-white text-3xl font-black opacity-90 drop-shadow-[0_2px_4px_rgba(0,0,0,0.7)]">
-                  {String(idx + 1).padStart(2, '0')}
+                  {String(idx + 1).padStart(2, "0")}
                 </span>
               </div>
             </div>
             <div className="mt-3">
-              <h4 className="text-sm font-bold truncate text-[var(--text-primary)] pr-2">{movie.title}</h4>
-              <p className="text-xs text-[var(--text-muted)] mt-0.5">{movie.release_date?.split("-")[0] || "2024"}</p>
+              <h4 className="text-sm font-bold truncate text-[var(--text-primary)] pr-2">
+                {movie.title}
+              </h4>
+              <p className="text-xs text-[var(--text-muted)] mt-0.5">
+                {movie.release_date?.split("-")[0] || "2024"}
+              </p>
             </div>
           </div>
         ))}

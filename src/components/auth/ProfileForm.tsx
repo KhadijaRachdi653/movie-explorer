@@ -1,13 +1,35 @@
 "use client";
 
 import { useActionState, startTransition, useState } from "react";
-import { updateProfile, changePassword, toggleSubscription } from "@/actions/userActions";
-import type { ProfileUser } from "@/types/user";
+import {
+  updateProfile,
+  changePassword,
+  toggleSubscription,
+} from "@/actions/userActions";
+
+export type ProfileUser = {
+  id?: string;
+  email: string;
+  username: string;
+  role?: string;
+};
 
 // 💡 AJOUT DE IS_SUBSCRIBED DANS LES PROPS DU COMPOSANT
-export default function ProfileForm({ user, isSubscribed }: { user: ProfileUser; isSubscribed: boolean }) {
-  const [profileState, profileAction, profilePending] = useActionState(updateProfile, { error: null, success: null });
-  const [passwordState, passwordAction, passwordPending] = useActionState(changePassword, { error: null, success: null });
+export default function ProfileForm({
+  user,
+  isSubscribed,
+}: {
+  user: ProfileUser;
+  isSubscribed: boolean;
+}) {
+  const [profileState, profileAction, profilePending] = useActionState(
+    updateProfile,
+    { error: null, success: null },
+  );
+  const [passwordState, passwordAction, passwordPending] = useActionState(
+    changePassword,
+    { error: null, success: null },
+  );
 
   // 💡 GESTION LOCALE POUR LE SYSTÈME DE PUSH ABONNEMENT EN TEMPS RÉEL
   const [subMessage, setSubMessage] = useState<string | null>(null);
@@ -33,9 +55,11 @@ export default function ProfileForm({ user, isSubscribed }: { user: ProfileUser;
 
   return (
     <div className="space-y-8 max-w-2xl mx-auto p-2 text-[var(--text-primary)]">
-
       {/* SECTION 1 : INFORMATIONS GÉNÉRALES */}
-      <form action={profileAction} className="space-y-5 rounded-[22px] bg-[var(--surface)] p-8 shadow-xl border border-[var(--surface-variant)] transition-colors">
+      <form
+        action={profileAction}
+        className="space-y-5 rounded-[22px] bg-[var(--surface)] p-8 shadow-xl border border-[var(--surface-variant)] transition-colors"
+      >
         <h2 className="text-sm font-extrabold uppercase tracking-widest text-[var(--accent)] mb-2">
           Informations personnelles
         </h2>
@@ -52,7 +76,10 @@ export default function ProfileForm({ user, isSubscribed }: { user: ProfileUser;
         </div>
 
         <div>
-          <label htmlFor="username" className="block text-[10px] font-extrabold uppercase tracking-widest text-[var(--text-muted)] mb-2">
+          <label
+            htmlFor="username"
+            className="block text-[10px] font-extrabold uppercase tracking-widest text-[var(--text-muted)] mb-2"
+          >
             Nom d’utilisateur
           </label>
           <input
@@ -73,8 +100,16 @@ export default function ProfileForm({ user, isSubscribed }: { user: ProfileUser;
           {profilePending ? "Mise à jour..." : "Enregistrer les modifications"}
         </button>
 
-        {profileState.error && <p className="text-xs text-amber-600 font-semibold bg-amber-500/10 p-3 rounded-xl border border-amber-500/20">{profileState.error}</p>}
-        {profileState.success && <p className="text-xs text-emerald-500 font-semibold bg-emerald-500/10 p-3 rounded-xl border border-emerald-500/20">{profileState.success}</p>}
+        {profileState.error && (
+          <p className="text-xs text-amber-600 font-semibold bg-amber-500/10 p-3 rounded-xl border border-amber-500/20">
+            {profileState.error}
+          </p>
+        )}
+        {profileState.success && (
+          <p className="text-xs text-emerald-500 font-semibold bg-emerald-500/10 p-3 rounded-xl border border-emerald-500/20">
+            {profileState.success}
+          </p>
+        )}
       </form>
 
       {/* 💡 SECTION INTERMÉDIAIRE 2 : GESTION DE L'ABONNEMENT STREAMING (CONFORME FIGMA) */}
@@ -97,21 +132,39 @@ export default function ProfileForm({ user, isSubscribed }: { user: ProfileUser;
               : "bg-[var(--accent-light)] text-[#1B1B19] border-transparent hover:brightness-105"
           }`}
         >
-          {subPending ? "Traitement..." : isSubscribed ? "Résilier mon accès Premium" : "Réactiver mon accès Premium ✨"}
+          {subPending
+            ? "Traitement..."
+            : isSubscribed
+              ? "Résilier mon accès Premium"
+              : "Réactiver mon accès Premium ✨"}
         </button>
 
-        {subError && <p className="text-xs text-amber-600 font-semibold bg-amber-500/10 p-3 rounded-xl border border-amber-500/20 mt-2">{subError}</p>}
-        {subMessage && <p className="text-xs text-emerald-500 font-semibold bg-green-500/10 p-3 rounded-xl border border-green-500/20 mt-2">{subMessage}</p>}
+        {subError && (
+          <p className="text-xs text-amber-600 font-semibold bg-amber-500/10 p-3 rounded-xl border border-amber-500/20 mt-2">
+            {subError}
+          </p>
+        )}
+        {subMessage && (
+          <p className="text-xs text-emerald-500 font-semibold bg-green-500/10 p-3 rounded-xl border border-green-500/20 mt-2">
+            {subMessage}
+          </p>
+        )}
       </div>
 
       {/* SECTION 3 : SÉCURITÉ & MOT DE PASSE */}
-      <form action={passwordAction} className="space-y-5 rounded-[22px] bg-[var(--surface)] p-8 shadow-xl border border-[var(--surface-variant)] transition-colors">
+      <form
+        action={passwordAction}
+        className="space-y-5 rounded-[22px] bg-[var(--surface)] p-8 shadow-xl border border-[var(--surface-variant)] transition-colors"
+      >
         <h2 className="text-sm font-extrabold uppercase tracking-widest text-[var(--text-muted)] mb-2">
           Sécurité du compte
         </h2>
 
         <div>
-          <label htmlFor="currentPassword" className="block text-[10px] font-extrabold uppercase tracking-widest text-[var(--text-muted)] mb-2">
+          <label
+            htmlFor="currentPassword"
+            className="block text-[10px] font-extrabold uppercase tracking-widest text-[var(--text-muted)] mb-2"
+          >
             Mot de passe actuel
           </label>
           <input
@@ -124,7 +177,10 @@ export default function ProfileForm({ user, isSubscribed }: { user: ProfileUser;
         </div>
 
         <div>
-          <label htmlFor="newPassword" className="block text-[10px] font-extrabold uppercase tracking-widest text-[var(--text-muted)] mb-2">
+          <label
+            htmlFor="newPassword"
+            className="block text-[10px] font-extrabold uppercase tracking-widest text-[var(--text-muted)] mb-2"
+          >
             Nouveau mot de passe
           </label>
           <input
@@ -144,8 +200,16 @@ export default function ProfileForm({ user, isSubscribed }: { user: ProfileUser;
           {passwordPending ? "Modification..." : "Modifier le mot de passe"}
         </button>
 
-        {passwordState.error && <p className="text-xs text-amber-500 font-semibold bg-amber-500/10 p-3 rounded-xl border border-amber-500/20">{passwordState.error}</p>}
-        {passwordState.success && <p className="text-xs text-emerald-500 font-semibold bg-emerald-500/10 p-3 rounded-xl border border-emerald-500/20">{passwordState.success}</p>}
+        {passwordState.error && (
+          <p className="text-xs text-amber-500 font-semibold bg-amber-500/10 p-3 rounded-xl border border-amber-500/20">
+            {passwordState.error}
+          </p>
+        )}
+        {passwordState.success && (
+          <p className="text-xs text-emerald-500 font-semibold bg-emerald-500/10 p-3 rounded-xl border border-emerald-500/20">
+            {passwordState.success}
+          </p>
+        )}
       </form>
     </div>
   );

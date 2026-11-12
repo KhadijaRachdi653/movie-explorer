@@ -39,12 +39,19 @@ export default function ForgotPasswordForm() {
 
   return (
     <div className="w-full max-w-md mx-auto p-8 bg-[var(--surface)] rounded-[22px] shadow-xl border border-[var(--surface-variant)] text-[var(--text-primary)] transition-all">
-      <h1 className="text-3xl font-extrabold text-center tracking-tight mb-2 text-[var(--accent-light,#D7BC83)]">Mot de passe oublié</h1>
-      <p className="text-sm text-[var(--text-muted)] text-center mb-8 font-medium">Un lien de réinitialisation sécurisé vous sera envoyé.</p>
+      <h1 className="text-3xl font-extrabold text-center tracking-tight mb-2 text-[var(--accent-light,#D7BC83)]">
+        Mot de passe oublié
+      </h1>
+      <p className="text-sm text-[var(--text-muted)] text-center mb-8 font-medium">
+        Un lien de réinitialisation sécurisé vous sera envoyé.
+      </p>
 
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
-          <label htmlFor="email" className="block text-[10px] font-extrabold uppercase tracking-widest text-[var(--text-muted)] mb-2">
+          <label
+            htmlFor="email"
+            className="block text-[10px] font-extrabold uppercase tracking-widest text-[var(--text-muted)] mb-2"
+          >
             Adresse e-mail
           </label>
           <input
@@ -59,8 +66,16 @@ export default function ForgotPasswordForm() {
           />
         </div>
 
-        {error && <p className="text-xs text-amber-600 font-semibold bg-amber-500/10 p-3 rounded-xl border border-amber-500/20">{error}</p>}
-        {message && <p className="text-xs text-green-500 font-semibold bg-green-500/10 p-3 rounded-xl border border-green-500/20">{message}</p>}
+        {error && (
+          <p className="text-xs text-amber-600 font-semibold bg-amber-500/10 p-3 rounded-xl border border-amber-500/20">
+            {error}
+          </p>
+        )}
+        {message && (
+          <p className="text-xs text-green-500 font-semibold bg-green-500/10 p-3 rounded-xl border border-green-500/20">
+            {message}
+          </p>
+        )}
 
         <button
           type="submit"
@@ -72,7 +87,10 @@ export default function ForgotPasswordForm() {
       </form>
 
       <p className="mt-6 text-sm text-center text-[var(--text-muted)]">
-        <Link href="/login" className="text-[var(--accent-light,#D7BC83)] font-bold hover:underline">
+        <Link
+          href="/login"
+          className="text-[var(--accent-light,#D7BC83)] font-bold hover:underline"
+        >
           Retour à la connexion
         </Link>
       </p>

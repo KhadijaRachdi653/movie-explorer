@@ -87,7 +87,9 @@ export default async function AdminUsersPage() {
                   {/* Colonne Rôle actuel */}
                   <td className="p-5">
                     <Link href={userDetailUrl} className="inline-block">
-                      <span className={`px-3 py-1 rounded-full text-xs font-bold border transition-colors ${u.role === 'admin' ? 'bg-[var(--surface-variant)] text-[var(--accent-light)] border-[var(--border-subtle)]' : 'bg-[var(--background)] text-[var(--text-muted)] border-[var(--border-subtle)]'}`}>
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-bold border transition-colors ${u.role === "admin" ? "bg-[var(--surface-variant)] text-[var(--accent-light)] border-[var(--border-subtle)]" : "bg-[var(--background)] text-[var(--text-muted)] border-[var(--border-subtle)]"}`}
+                      >
                         {u.role.toUpperCase()}
                       </span>
                     </Link>
@@ -96,7 +98,9 @@ export default async function AdminUsersPage() {
                   {/* Colonne Statut de validation */}
                   <td className="p-5">
                     <Link href={userDetailUrl} className="inline-block">
-                      <span className={`status-pill ${u.valide ? "status--active" : "status--blocked"}`}>
+                      <span
+                        className={`status-pill ${u.valide ? "status--active" : "status--blocked"}`}
+                      >
                         {u.valide ? "Compte Validé" : "Compte Bloqué"}
                       </span>
                     </Link>
@@ -104,7 +108,12 @@ export default async function AdminUsersPage() {
 
                   {/* Colonne Actions de modération */}
                   <td className="p-5 flex justify-center gap-4">
-                    <form action={async () => { "use server"; await toggleUserBan(u.id); }}>
+                    <form
+                      action={async () => {
+                        "use server";
+                        await toggleUserBan(u.id);
+                      }}
+                    >
                       <button
                         type="submit"
                         className="px-4 py-2 rounded-xl font-bold text-xs text-[var(--text-primary)] border border-[var(--border-subtle)] bg-[var(--background)] hover:bg-[var(--surface-variant)] transition-all active:scale-95 cursor-pointer shadow-sm"
@@ -113,7 +122,12 @@ export default async function AdminUsersPage() {
                       </button>
                     </form>
 
-                    <form action={async () => { "use server"; await toggleUserRole(u.id); }}>
+                    <form
+                      action={async () => {
+                        "use server";
+                        await toggleUserRole(u.id);
+                      }}
+                    >
                       <button
                         type="submit"
                         disabled={isSelf}

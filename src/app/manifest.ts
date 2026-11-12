@@ -4,7 +4,8 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "Movie Explorer",
     short_name: "MovieX",
-    description: "Application PWA pour découvrir, rechercher et organiser vos films préférés.",
+    description:
+      "Application PWA pour découvrir, rechercher et organiser vos films préférés.",
     id: "tn.esprit.movieexplorer",
     start_url: "/",
     scope: "/",

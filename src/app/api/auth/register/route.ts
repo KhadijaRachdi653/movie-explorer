@@ -10,14 +10,22 @@ export async function POST(req: Request) {
     const { email, username, password } = await req.json();
 
     if (!email || !username || !password) {
-      return NextResponse.json({ error: "Tous les champs sont obligatoires." }, { status: 400 });
+      return NextResponse.json(
+        { error: "Tous les champs sont obligatoires." },
+        { status: 400 },
+      );
     }
 
     await connectToDatabase();
 
-    const userExists = await User.findOne({ email: email.toLowerCase().trim() });
+    const userExists = await User.findOne({
+      email: email.toLowerCase().trim(),
+    });
     if (userExists) {
-      return NextResponse.json({ error: "Cette adresse e-mail est déjà utilisée." }, { status: 400 });
+      return NextResponse.json(
+        { error: "Cette adresse e-mail est déjà utilisée." },
+        { status: 400 },
+      );
     }
 
     const salt = await bcrypt.genSalt(12);
@@ -29,7 +37,7 @@ export async function POST(req: Request) {
       email: email.toLowerCase().trim(),
       name: username.trim(),
       password: hashedPassword,
-      verificationToken
+      verificationToken,
     });
 
     const transporter = nodemailer.createTransport({
@@ -41,7 +49,7 @@ export async function POST(req: Request) {
       },
     });
 
-    const activationUrl = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/auth/activate?token=${verificationToken}`;
+    const activationUrl = `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/api/auth/activate?token=${verificationToken}`;
 
     await transporter.sendMail({
       from: '"Movie Explorer" <no-reply@movieexplorer.tn>',
@@ -61,8 +69,14 @@ export async function POST(req: Request) {
       `,
     });
 
-    return NextResponse.json({ success: true, message: "Compte créé." }, { status: 201 });
+    return NextResponse.json(
+      { success: true, message: "Compte créé." },
+      { status: 201 },
+    );
   } catch (error) {
-    return NextResponse.json({ error: "Erreur interne serveur." }, { status: 500 });
+    return NextResponse.json(
+      { error: "Erreur interne serveur." },
+      { status: 500 },
+    );
   }
 }

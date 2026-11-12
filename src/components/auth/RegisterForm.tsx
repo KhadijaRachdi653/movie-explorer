@@ -21,7 +21,11 @@ export default function RegisterForm() {
       const response = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.toLowerCase().trim(), username, password }),
+        body: JSON.stringify({
+          email: email.toLowerCase().trim(),
+          username,
+          password,
+        }),
       });
 
       const data = await response.json();
@@ -40,12 +44,19 @@ export default function RegisterForm() {
 
   return (
     <div className="w-full max-w-md mx-auto p-8 bg-[var(--surface)] rounded-[22px] shadow-xl border border-[var(--surface-variant)] text-[var(--text-primary)] transition-all">
-      <h1 className="text-3xl font-extrabold text-center tracking-tight mb-2 text-[var(--accent-light,#D7BC83)]">Créer un compte</h1>
-      <p className="text-sm text-[var(--text-muted)] text-center mb-8 font-medium">Rejoignez la communauté CINEA</p>
+      <h1 className="text-3xl font-extrabold text-center tracking-tight mb-2 text-[var(--accent-light,#D7BC83)]">
+        Créer un compte
+      </h1>
+      <p className="text-sm text-[var(--text-muted)] text-center mb-8 font-medium">
+        Rejoignez la communauté CINEA
+      </p>
 
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
-          <label htmlFor="username" className="block text-[10px] font-extrabold uppercase tracking-widest text-[var(--text-muted)] mb-2">
+          <label
+            htmlFor="username"
+            className="block text-[10px] font-extrabold uppercase tracking-widest text-[var(--text-muted)] mb-2"
+          >
             Nom d’utilisateur
           </label>
           <input
@@ -62,7 +73,10 @@ export default function RegisterForm() {
         </div>
 
         <div>
-          <label htmlFor="email" className="block text-[10px] font-extrabold uppercase tracking-widest text-[var(--text-muted)] mb-2">
+          <label
+            htmlFor="email"
+            className="block text-[10px] font-extrabold uppercase tracking-widest text-[var(--text-muted)] mb-2"
+          >
             Adresse e-mail
           </label>
           <input
@@ -78,7 +92,10 @@ export default function RegisterForm() {
         </div>
 
         <div>
-          <label htmlFor="password" className="block text-[10px] font-extrabold uppercase tracking-widest text-[var(--text-muted)] mb-2">
+          <label
+            htmlFor="password"
+            className="block text-[10px] font-extrabold uppercase tracking-widest text-[var(--text-muted)] mb-2"
+          >
             Mot de passe
           </label>
           <input
@@ -93,7 +110,11 @@ export default function RegisterForm() {
           />
         </div>
 
-        {error && <p className="text-xs text-amber-600 font-semibold bg-amber-500/10 p-3 rounded-xl border border-amber-500/20">{error}</p>}
+        {error && (
+          <p className="text-xs text-amber-600 font-semibold bg-amber-500/10 p-3 rounded-xl border border-amber-500/20">
+            {error}
+          </p>
+        )}
 
         <button
           type="submit"
@@ -106,7 +127,10 @@ export default function RegisterForm() {
 
       <p className="mt-6 text-sm text-center text-[var(--text-muted)]">
         Déjà un compte ?{" "}
-        <Link href="/login" className="text-[var(--accent-light,#D7BC83)] font-bold hover:underline">
+        <Link
+          href="/login"
+          className="text-[var(--accent-light,#D7BC83)] font-bold hover:underline"
+        >
           Se connecter
         </Link>
       </p>

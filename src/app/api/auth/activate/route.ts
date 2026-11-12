@@ -18,7 +18,10 @@ export async function GET(req: Request) {
     const user = await User.findOne({ verificationToken: token });
 
     if (!user) {
-      return new NextResponse("Ce lien d'activation est invalide ou a déjà été utilisé.", { status: 400 });
+      return new NextResponse(
+        "Ce lien d'activation est invalide ou a déjà été utilisé.",
+        { status: 400 },
+      );
     }
 
     // 💡 VALIDATION : Activation réussie du compte et destruction du token à usage unique
@@ -29,9 +32,10 @@ export async function GET(req: Request) {
     // 🚀 REDIRECTION : On redirige l'utilisateur vers la page de connexion avec un indicateur de succès
     const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
     return NextResponse.redirect(`${baseUrl}/login?activated=true`);
-
   } catch (error) {
     console.error("Erreur lors de l'activation :", error);
-    return new NextResponse("Une erreur technique interne est survenue.", { status: 500 });
+    return new NextResponse("Une erreur technique interne est survenue.", {
+      status: 500,
+    });
   }
 }

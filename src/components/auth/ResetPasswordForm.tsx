@@ -54,20 +54,34 @@ export default function ResetPasswordForm() {
   if (!token) {
     return (
       <div className="w-full max-w-md mx-auto p-8 bg-[var(--surface)] rounded-[22px] border border-amber-500/20 text-center text-[var(--text-primary)] shadow-xl">
-        <p className="text-amber-600 font-bold mb-4">Jeton de sécurité manquant.</p>
-        <Link href="/login" className="text-[var(--accent-light,#D7BC83)] font-bold underline">Retour à la connexion</Link>
+        <p className="text-amber-600 font-bold mb-4">
+          Jeton de sécurité manquant.
+        </p>
+        <Link
+          href="/login"
+          className="text-[var(--accent-light,#D7BC83)] font-bold underline"
+        >
+          Retour à la connexion
+        </Link>
       </div>
     );
   }
 
   return (
     <div className="w-full max-w-md mx-auto p-8 bg-[var(--surface)] rounded-[22px] shadow-xl border border-[var(--surface-variant)] text-[var(--text-primary)] transition-all">
-      <h1 className="text-3xl font-extrabold text-center tracking-tight mb-2 text-[var(--accent-light,#D7BC83)]">Nouveau mot de passe</h1>
-      <p className="text-sm text-[var(--text-muted)] text-center mb-8 font-medium">Définissez vos nouveaux paramètres d'accès</p>
+      <h1 className="text-3xl font-extrabold text-center tracking-tight mb-2 text-[var(--accent-light,#D7BC83)]">
+        Nouveau mot de passe
+      </h1>
+      <p className="text-sm text-[var(--text-muted)] text-center mb-8 font-medium">
+        Définissez vos nouveaux paramètres d'accès
+      </p>
 
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
-          <label htmlFor="password" className="block text-[10px] font-extrabold uppercase tracking-widest text-[var(--text-muted)] mb-2">
+          <label
+            htmlFor="password"
+            className="block text-[10px] font-extrabold uppercase tracking-widest text-[var(--text-muted)] mb-2"
+          >
             Nouveau mot de passe (8 caractères min)
           </label>
           <input
@@ -82,7 +96,10 @@ export default function ResetPasswordForm() {
         </div>
 
         <div>
-          <label htmlFor="confirmPassword" className="block text-[10px] font-extrabold uppercase tracking-widest text-[var(--text-muted)] mb-2">
+          <label
+            htmlFor="confirmPassword"
+            className="block text-[10px] font-extrabold uppercase tracking-widest text-[var(--text-muted)] mb-2"
+          >
             Confirmez le mot de passe
           </label>
           <input
@@ -95,8 +112,16 @@ export default function ResetPasswordForm() {
           />
         </div>
 
-        {error && <p className="text-xs text-amber-600 font-semibold bg-amber-500/10 p-3 rounded-xl border border-amber-500/20">{error}</p>}
-        {message && <p className="text-xs text-green-500 font-semibold bg-green-500/10 p-3 rounded-xl border border-green-500/20">{message}</p>}
+        {error && (
+          <p className="text-xs text-amber-600 font-semibold bg-amber-500/10 p-3 rounded-xl border border-amber-500/20">
+            {error}
+          </p>
+        )}
+        {message && (
+          <p className="text-xs text-green-500 font-semibold bg-green-500/10 p-3 rounded-xl border border-green-500/20">
+            {message}
+          </p>
+        )}
 
         <button
           type="submit"

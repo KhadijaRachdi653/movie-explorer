@@ -22,10 +22,12 @@ if (
   webpush.setVapidDetails(
     process.env.VAPID_SUBJECT,
     process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
-    process.env.VAPID_PRIVATE_KEY
+    process.env.VAPID_PRIVATE_KEY,
   );
 } else {
-  console.warn("⚠️ Les variables VAPID ne sont pas encore totalement initialisées.");
+  console.warn(
+    "⚠️ Les variables VAPID ne sont pas encore totalement initialisées.",
+  );
 }
 
 // 🔒 CLOISONNEMENT : Session obligatoire
@@ -50,14 +52,16 @@ async function checkAdmin() {
 // 🛠️ MISE À JOUR DU PROFIL (Modifie le champ 'name')
 export async function updateProfile(
   prevState: ActionState,
-  formData: FormData
+  formData: FormData,
 ): Promise<ActionState> {
   try {
     const user = await checkAuth();
     const name = (formData.get("username") as string)?.trim() ?? "";
 
     if (name.length < 3) {
-      return { error: "Le nom d'utilisateur doit faire au moins 3 caractères." };
+      return {
+        error: "Le nom d'utilisateur doit faire au moins 3 caractères.",
+      };
     }
 
     await connectToDatabase();
@@ -72,7 +76,7 @@ export async function updateProfile(
 // 🛠️ MODIFICATION DU MOT DE PASSE (Modifie le champ 'password')
 export async function changePassword(
   prevState: ActionState,
-  formData: FormData
+  formData: FormData,
 ): Promise<ActionState> {
   try {
     const user = await checkAuth();
@@ -84,11 +88,16 @@ export async function changePassword(
     }
 
     if (newPassword.length < 8) {
-      return { error: "Le nouveau mot de passe doit faire au moins 8 caractères." };
+      return {
+        error: "Le nouveau mot de passe doit faire au moins 8 caractères.",
+      };
     }
 
     await connectToDatabase();
     const dbUser = await User.findById(user.id);
+    if (!dbUser) {
+      return { error: "Utilisateur introuvable." };
+    }
 
     const isMatch = await bcrypt.compare(currentPassword, dbUser.password);
     if (!isMatch) {
@@ -120,7 +129,7 @@ export async function toggleSubscription(): Promise<ActionState> {
 
     // 1. Mise à jour de l'état d'abonnement en base de données
     await User.findByIdAndUpdate(user.id, {
-      $set: { isSubscribed: nextSubscriptionState }
+      $set: { isSubscribed: nextSubscriptionState },
     });
 
     // 2. Préparation du payload JSON textuel pour la bulle d'alerte OS
@@ -129,7 +138,7 @@ export async function toggleSubscription(): Promise<ActionState> {
       body: nextSubscriptionState
         ? `✨ Le membre ${dbUser.name} vient d'activer son accès Premium Streaming.`
         : `👤 Le membre ${dbUser.name} a résilié son abonnement Streaming.`,
-      userId: dbUser._id.toString() // Transmis pour permettre la redirection au clic
+      userId: dbUser._id.toString(), // Transmis pour permettre la redirection au clic
     });
 
     // 3. 📡 RÉCUPÉRATION ET PROPULSION DU PUSH VERS LES NAVIGATEURS DES ADMINS
@@ -137,13 +146,15 @@ export async function toggleSubscription(): Promise<ActionState> {
 
     // Envoi asynchrone parallélisé vers tous les terminaux enregistrés
     const pushPromises = activeSubscriptions.map(async (sub) => {
+      if (!sub.keys?.p256dh || !sub.keys?.auth) return;
+
       try {
         const pushTarget = {
           endpoint: sub.endpoint,
           keys: {
             p256dh: sub.keys.p256dh,
-            auth: sub.keys.auth
-          }
+            auth: sub.keys.auth,
+          },
         };
 
         // Envoi physique chiffré
@@ -153,7 +164,10 @@ export async function toggleSubscription(): Promise<ActionState> {
         if (pushError.statusCode === 410 || pushError.statusCode === 404) {
           await PushSubscription.findByIdAndDelete(sub._id);
         }
-        console.error("Échec d'envoi d'un push vers un terminal :", pushError.message);
+        console.error(
+          "Échec d'envoi d'un push vers un terminal :",
+          pushError.message,
+        );
       }
     });
 
@@ -165,7 +179,7 @@ export async function toggleSubscription(): Promise<ActionState> {
     return {
       success: nextSubscriptionState
         ? "Félicitations ! Votre accès Premium Streaming est désormais actif."
-        : "Votre abonnement a été résilié. Vous repassez en compte Cinéphile gratuit."
+        : "Votre abonnement a été résilié. Vous repassez en compte Cinéphile gratuit.",
     };
   } catch (err: any) {
     return { error: err.message || "Une erreur sur le serveur de Push." };
@@ -182,7 +196,7 @@ export async function toggleUserBan(userId: string): Promise<void> {
     if (!target) return;
 
     await User.findByIdAndUpdate(userId, {
-      $set: { valide: !target.valide }
+      $set: { valide: !target.valide },
     });
 
     revalidatePath("/admin/users");
@@ -205,7 +219,7 @@ export async function toggleUserRole(userId: string): Promise<void> {
     const nextRole = target.role === "admin" ? "user" : "admin";
 
     await User.findByIdAndUpdate(userId, {
-      $set: { role: nextRole }
+      $set: { role: nextRole },
     });
 
     revalidatePath("/admin/users");

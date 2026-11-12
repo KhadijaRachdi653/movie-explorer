@@ -9,20 +9,24 @@ export async function POST(req: Request) {
     const { email } = await req.json();
 
     if (!email) {
-      return NextResponse.json({ error: "L'adresse e-mail est obligatoire." }, { status: 400 });
+      return NextResponse.json(
+        { error: "L'adresse e-mail est obligatoire." },
+        { status: 400 },
+      );
     }
 
     await connectToDatabase();
 
     // 🔍 RECHERCHE STRICTE PAR REGEX : Gère les majuscules de la BD Cloud Atlas sans distinction de casse
     const user = await User.findOne({
-      email: { $regex: new RegExp(`^${email.trim()}$`, "i") }
+      email: { $regex: new RegExp(`^${email.trim()}$`, "i") },
     });
 
     // Règle d'or de sécurité : on affiche le même message pour éviter le vol de comptes
     if (!user) {
       return NextResponse.json({
-        message: "Si ce compte existe, un e-mail d'activation sécurisé a été envoyé."
+        message:
+          "Si ce compte existe, un e-mail d'activation sécurisé a été envoyé.",
       });
     }
 
@@ -44,7 +48,7 @@ export async function POST(req: Request) {
       },
     });
 
-    const resetUrl = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
+    const resetUrl = `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/reset-password?token=${resetToken}`;
 
     const mailOptions = {
       from: '"Movie Explorer" <no-reply@movieexplorer.tn>',
@@ -70,11 +74,14 @@ export async function POST(req: Request) {
     await transporter.sendMail(mailOptions);
 
     return NextResponse.json({
-      message: "Si ce compte existe, un e-mail d'activation sécurisé a été envoyé."
+      message:
+        "Si ce compte existe, un e-mail d'activation sécurisé a été envoyé.",
     });
-
   } catch (error) {
     console.error("Erreur d'envoi Nodemailer :", error);
-    return NextResponse.json({ error: "Une erreur technique est survenue sur le serveur." }, { status: 500 });
+    return NextResponse.json(
+      { error: "Une erreur technique est survenue sur le serveur." },
+      { status: 500 },
+    );
   }
 }

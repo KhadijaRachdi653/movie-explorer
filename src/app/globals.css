@@ -3,46 +3,56 @@
 @layer base {
   /* ☀️ PALETTE CLAIRE (Figma Soft Light) */
   :root {
-    --background: #F5F3EE;       /* Fond ivoire chaleureux */
-    --surface: #FFFFFF;          /* Surfaces blanches crème douces */
-    --surface-variant: #EAE7E0;  /* Conteneurs secondaires et puces */
-    --border-subtle: #DCD8D0;    /* Bordure crème très claire (ZÉRO CADRE NOIR) */
-    --text-primary: #1B1B19;     /* Texte anthracite haute lisibilité */
-    --text-muted: #716F68;       /* Texte secondaire estompé */
-    --accent: #8C692E;           /* Bronze / Champagne patiné sourd */
-    --accent-light: #D7BC83;     /* Champagne éclatant polished */
+    --background: #f5f3ee; /* Fond ivoire chaleureux */
+    --surface: #ffffff; /* Surfaces blanches crème douces */
+    --surface-variant: #eae7e0; /* Conteneurs secondaires et puces */
+    --border-subtle: #dcd8d0; /* Bordure crème très claire (ZÉRO CADRE NOIR) */
+    --text-primary: #1b1b19; /* Texte anthracite haute lisibilité */
+    --text-muted: #716f68; /* Texte secondaire estompé */
+    --accent: #8c692e; /* Bronze / Champagne patiné sourd */
+    --accent-light: #d7bc83; /* Champagne éclatant polished */
   }
 
   /* 🌙 PALETTE SOMBRE (Cinea Deep Dark Mode) */
   .dark {
-    --background: #090B10;       /* Fond nuit profonde organique */
-    --surface: #12151B;          /* Surfaces feutrées sombres */
-    --surface-variant: #1B1E25;  /* Châssis d'inputs et séparateurs */
-    --border-subtle: #22252D;    /* Bordure sombre fondue (ZÉRO CADRE NOIR) */
-    --text-primary: #F5F3EE;     /* Texte ivoire lumineux */
-    --text-muted: #97979A;       /* Texte secondaire gris moyen */
-    --accent: #D7BC83;           /* Champagne brillant */
-    --accent-light: #E2CA98;     /* Or satiné / Golden */
+    --background: #090b10; /* Fond nuit profonde organique */
+    --surface: #12151b; /* Surfaces feutrées sombres */
+    --surface-variant: #1b1e25; /* Châssis d'inputs et séparateurs */
+    --border-subtle: #22252d; /* Bordure sombre fondue (ZÉRO CADRE NOIR) */
+    --text-primary: #f5f3ee; /* Texte ivoire lumineux */
+    --text-muted: #97979a; /* Texte secondaire gris moyen */
+    --accent: #d7bc83; /* Champagne brillant */
+    --accent-light: #e2ca98; /* Or satiné / Golden */
   }
 }
 
 body {
   background-color: var(--background);
   color: var(--text-primary);
-  font-family: 'Manrope', Arial, sans-serif;
-  transition: background-color 0.3s ease, color 0.3s ease;
+  font-family: "Manrope", Arial, sans-serif;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
   overflow-x: hidden;
 }
 
 /* Élimination des bordures d'autofocus intrusives des navigateurs */
-input:focus, button:focus, select:focus, textarea:focus {
+input:focus,
+button:focus,
+select:focus,
+textarea:focus {
   outline: none !important;
   box-shadow: none !important;
 }
 
 /* Masquage ergonomique de la scrollbar pour les listes horizontales */
-.no-scrollbar::-webkit-scrollbar { display: none; }
-.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
 
 /* 💡 STYLES DE TABLEAU ADMINISTRATIF PRÉMIUM FIGMA */
 
@@ -50,24 +60,26 @@ input:focus, button:focus, select:focus, textarea:focus {
   height: 58px;
   cursor: pointer;
   position: relative;
-  transition: background-color 160ms ease, box-shadow 160ms ease;
+  transition:
+    background-color 160ms ease,
+    box-shadow 160ms ease;
 }
 
 /* Effet au survol : fond doux + barre champagne de 3px à gauche (inset) */
 .user-row:hover {
   background-color: var(--surface-variant) !important;
-  box-shadow: inset 3px 0 0 var(--accent, #8C692E);
+  box-shadow: inset 3px 0 0 var(--accent, #8c692e);
 }
 
 /* Optionnel : Style si la ligne correspond à la page en cours (sélectionnée) */
 .user-row.is-selected {
   background-color: var(--surface-variant);
-  box-shadow: inset 4px 0 0 var(--accent-light, #D7BC83);
+  box-shadow: inset 4px 0 0 var(--accent-light, #d7bc83);
 }
 
 /* Accessibilité au clavier pour la soutenance */
 .user-row:focus-visible {
-  outline: 2px solid var(--accent, #8C692E);
+  outline: 2px solid var(--accent, #8c692e);
   outline-offset: -2px;
 }
 
@@ -76,11 +88,13 @@ input:focus, button:focus, select:focus, textarea:focus {
   color: var(--text-muted);
   font-size: 20px;
   display: inline-block;
-  transition: transform 160ms ease, color 160ms ease;
+  transition:
+    transform 160ms ease,
+    color 160ms ease;
 }
 
 .user-row:hover .row-chevron {
-  color: var(--accent, #8C692E);
+  color: var(--accent, #8c692e);
   transform: translateX(3px);
 }
 

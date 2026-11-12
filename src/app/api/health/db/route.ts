@@ -1,4 +1,3 @@
-
 import { NextResponse } from "next/server";
 import mongoose from "mongoose";
 import { connectToDatabase } from "@/lib/mongodb";
@@ -20,8 +19,7 @@ export async function GET() {
         ok: false,
         error: "Database connection failed",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
-

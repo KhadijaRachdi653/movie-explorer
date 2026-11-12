@@ -19,7 +19,10 @@ export async function POST(req: Request) {
     });
 
     if (!user) {
-      return NextResponse.json({ error: "Le jeton est invalide ou expiré." }, { status: 400 });
+      return NextResponse.json(
+        { error: "Le jeton est invalide ou expiré." },
+        { status: 400 },
+      );
     }
 
     const salt = await bcrypt.genSalt(12);
@@ -32,7 +35,10 @@ export async function POST(req: Request) {
     user.valide = true; // Active le compte immédiatement
     await user.save();
 
-    return NextResponse.json({ success: true, message: "Mot de passe réinitialisé." });
+    return NextResponse.json({
+      success: true,
+      message: "Mot de passe réinitialisé.",
+    });
   } catch (error) {
     return NextResponse.json({ error: "Erreur serveur." }, { status: 500 });
   }

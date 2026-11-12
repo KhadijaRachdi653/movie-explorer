@@ -50,7 +50,9 @@ export default function PushRegisterButton() {
         if (sub) {
           await sub.unsubscribe();
           setIsSubscribed(false);
-          setMessage("Ce terminal a été déconnecté du flux des alertes système.");
+          setMessage(
+            "Ce terminal a été déconnecté du flux des alertes système.",
+          );
         }
         setLoading(false);
         return;
@@ -59,7 +61,9 @@ export default function PushRegisterButton() {
       // 🔔 Activation : Demande l'autorisation native au système d'exploitation (OS Windows/Mobile)
       const permission = await Notification.requestPermission();
       if (permission !== "granted") {
-        setError("L'autorisation de notification a été refusée par le système.");
+        setError(
+          "L'autorisation de notification a été refusée par le système.",
+        );
         setLoading(false);
         return;
       }
@@ -100,11 +104,12 @@ export default function PushRegisterButton() {
           setError(result.error);
         } else {
           setIsSubscribed(true);
-          setMessage("✨ Appairage matériel réussi ! Votre OS interceptera les alertes d'abonnement.");
+          setMessage(
+            "✨ Appairage matériel réussi ! Votre OS interceptera les alertes d'abonnement.",
+          );
         }
         setLoading(false);
       });
-
     } catch (err: any) {
       console.error("Échec du protocole Push PWA :", err);
       setError("Échec de la synchronisation cryptographique.");
@@ -122,7 +127,10 @@ export default function PushRegisterButton() {
             Abonnement aux Notifications PWA Natives
           </h2>
           <p className="text-xs text-[var(--text-muted)] mt-1 font-medium max-w-xl leading-relaxed">
-            Activez la réception des alertes système en tâche de fond. Vous recevrez une notification Windows/Mobile chiffrée en temps réel au moindre changement de forfait ou résiliation de vos cinéphiles, même si CINEA est fermé.
+            Activez la réception des alertes système en tâche de fond. Vous
+            recevrez une notification Windows/Mobile chiffrée en temps réel au
+            moindre changement de forfait ou résiliation de vos cinéphiles, même
+            si CINEA est fermé.
           </p>
         </div>
 
@@ -136,7 +144,11 @@ export default function PushRegisterButton() {
               : "bg-[var(--accent-light)] text-[#1B1B19] border-transparent hover:brightness-105"
           }`}
         >
-          {loading ? "Configuration..." : isSubscribed ? "🔔 Désactiver les Push OS" : "🔔 Recevoir les Push OS ✨"}
+          {loading
+            ? "Configuration..."
+            : isSubscribed
+              ? "🔔 Désactiver les Push OS"
+              : "🔔 Recevoir les Push OS ✨"}
         </button>
       </div>
 

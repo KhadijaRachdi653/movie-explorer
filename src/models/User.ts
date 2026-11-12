@@ -1,4 +1,9 @@
-import mongoose, { Schema, Document, Model, type InferSchemaType } from "mongoose";
+import mongoose, {
+  Schema,
+  Document,
+  Model,
+  type InferSchemaType,
+} from "mongoose";
 
 const UserSchema = new Schema(
   {
@@ -7,39 +12,39 @@ const UserSchema = new Schema(
       required: true,
       unique: true,
       lowercase: true,
-      trim: true
+      trim: true,
     },
     name: {
       type: String,
       required: true,
-      trim: true
+      trim: true,
     },
     password: {
       type: String,
-      required: true
+      required: true,
     },
     avatar: {
       type: String,
-      default: ""
+      default: "",
     },
     role: {
       type: String,
-      default: "user"
+      default: "user",
     },
     valide: {
       type: Boolean,
-      default: false
+      default: false,
     },
     // 💡 STATUT ABONNEMENT SÉMANTIQUE : Vrai par défaut à la création pour faciliter vos tests
     isSubscribed: {
       type: Boolean,
-      default: true
+      default: true,
     },
     verificationToken: { type: String, default: null },
     resetPasswordToken: { type: String, default: null },
     resetPasswordExpires: { type: Date, default: null },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 export type IUser = InferSchemaType<typeof UserSchema> & Document;

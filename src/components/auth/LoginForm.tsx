@@ -55,8 +55,12 @@ export default function LoginForm() {
 
   return (
     <div className="w-full max-w-md mx-auto p-8 bg-[var(--surface)] rounded-[22px] shadow-xl border border-[var(--border-subtle)] text-[var(--text-primary)] transition-all">
-      <h2 className="text-3xl font-extrabold text-center tracking-tight mb-2 text-[var(--accent)]">Connexion</h2>
-      <p className="text-sm text-[var(--text-muted)] text-center mb-8 font-medium">Ravi de vous revoir sur CINEA</p>
+      <h2 className="text-3xl font-extrabold text-center tracking-tight mb-2 text-[var(--accent)]">
+        Connexion
+      </h2>
+      <p className="text-sm text-[var(--text-muted)] text-center mb-8 font-medium">
+        Ravi de vous revoir sur CINEA
+      </p>
 
       {registered && (
         <p className="mb-6 text-xs p-3 bg-green-500/10 text-green-500 rounded-xl text-center font-semibold border border-green-500/20">
@@ -72,7 +76,10 @@ export default function LoginForm() {
 
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
-          <label htmlFor="email" className="block text-[10px] font-extrabold uppercase tracking-widest text-[var(--text-muted)] mb-2">
+          <label
+            htmlFor="email"
+            className="block text-[10px] font-extrabold uppercase tracking-widest text-[var(--text-muted)] mb-2"
+          >
             Adresse e-mail
           </label>
           <input
@@ -90,10 +97,16 @@ export default function LoginForm() {
 
         <div>
           <div className="flex justify-between items-center mb-2">
-            <label htmlFor="password" className="block text-[10px] font-extrabold uppercase tracking-widest text-[var(--text-muted)]">
+            <label
+              htmlFor="password"
+              className="block text-[10px] font-extrabold uppercase tracking-widest text-[var(--text-muted)]"
+            >
               Mot de passe
             </label>
-            <Link href="/forgot-password" className="text-xs text-[var(--accent)] font-bold hover:underline">
+            <Link
+              href="/forgot-password"
+              className="text-xs text-[var(--accent)] font-bold hover:underline"
+            >
               Oublié ?
             </Link>
           </div>
@@ -109,7 +122,11 @@ export default function LoginForm() {
           />
         </div>
 
-        {error && <p className="text-xs text-amber-600 font-semibold bg-amber-500/10 p-3 rounded-xl border border-amber-500/20">{error}</p>}
+        {error && (
+          <p className="text-xs text-amber-600 font-semibold bg-amber-500/10 p-3 rounded-xl border border-amber-500/20">
+            {error}
+          </p>
+        )}
 
         <button
           type="submit"
@@ -122,7 +139,10 @@ export default function LoginForm() {
 
       <p className="mt-6 text-sm text-center text-[var(--text-muted)]">
         Nouveau sur CINEA ?{" "}
-        <Link href="/register" className="text-[var(--accent)] font-bold hover:underline">
+        <Link
+          href="/register"
+          className="text-[var(--accent)] font-bold hover:underline"
+        >
           Créer un compte
         </Link>
       </p>

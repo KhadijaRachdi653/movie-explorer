@@ -14,12 +14,10 @@ export type PushActionState = {
 /**
  * Enregistre ou met à jour l'abonnement Push d'un administrateur en base de données
  */
-export async function savePushSubscription(
-  subscriptionInput: {
-    endpoint: string;
-    keys: { p256dh: string; auth: string };
-  }
-): Promise<PushActionState> {
+export async function savePushSubscription(subscriptionInput: {
+  endpoint: string;
+  keys: { p256dh: string; auth: string };
+}): Promise<PushActionState> {
   try {
     // 1. 🔒 Cloisonnement de sécurité : Session active obligatoire
     const session = await auth();
@@ -47,10 +45,13 @@ export async function savePushSubscription(
           },
         },
       },
-      { upsert: true, new: true } // Crée le document s'il n'existe pas encore
+      { upsert: true, new: true }, // Crée le document s'il n'existe pas encore
     );
 
-    return { success: "Votre terminal d'administration a été lié avec succès au serveur de Push CINEA." };
+    return {
+      success:
+        "Votre terminal d'administration a été lié avec succès au serveur de Push CINEA.",
+    };
   } catch (error: any) {
     console.error("Erreur enregistrement PushSubscription :", error);
     return { error: "Une erreur technique est survenue lors de l'appairage." };

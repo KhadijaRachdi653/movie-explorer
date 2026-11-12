@@ -1,12 +1,13 @@
-
 import mongoose, { type Mongoose } from "mongoose";
 
 declare global {
   // Reuse the connection while Next.js reloads modules in development.
-  var mongoose: {
-    conn: Mongoose | null;
-    promise: Promise<Mongoose> | null;
-  } | undefined;
+  var mongoose:
+    | {
+        conn: Mongoose | null;
+        promise: Promise<Mongoose> | null;
+      }
+    | undefined;
 }
 
 const MONGODB_URI = process.env.MONGODB_URI;
@@ -28,9 +29,9 @@ export async function connectToDatabase(): Promise<Mongoose> {
   }
 
   if (!cached.promise) {
-    cached.promise = mongoose.connect(MONGODB_URI).then(
-      (instance) => instance
-    );
+    cached.promise = mongoose
+      .connect(MONGODB_URI!)
+      .then((instance) => instance);
   }
 
   try {
@@ -43,3 +44,4 @@ export async function connectToDatabase(): Promise<Mongoose> {
   return cached.conn;
 }
 
+export default connectToDatabase;

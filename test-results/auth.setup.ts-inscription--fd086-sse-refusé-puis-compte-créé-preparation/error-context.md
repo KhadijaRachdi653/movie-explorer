@@ -1,0 +1,57 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - link "Movie Explorer" [ref=e4] [cursor=pointer]:
+        - /url: /
+      - navigation "Navigation principale" [ref=e5]:
+        - link "Accueil" [ref=e6] [cursor=pointer]:
+          - /url: /
+        - link "Films" [ref=e7] [cursor=pointer]:
+          - /url: /movies
+        - link "Découvrir" [ref=e8] [cursor=pointer]:
+          - /url: /discover
+        - link "Pour vous" [ref=e9] [cursor=pointer]:
+          - /url: /recommendations
+        - link "Mes listes" [ref=e10] [cursor=pointer]:
+          - /url: /lists
+        - link "Ma collection" [ref=e11] [cursor=pointer]:
+          - /url: /collection
+  - generic [ref=e12]:
+    - generic [ref=e16]:
+      - paragraph [ref=e17]: Vos films, vos listes, vos avis.
+      - paragraph [ref=e18]: Un seul compte pour tout retrouver sur Movie Explorer.
+    - generic [ref=e20]:
+      - generic [ref=e21]:
+        - heading "Créer un compte" [level=1] [ref=e22]
+        - paragraph [ref=e23]: Rangez vos films dans des listes et recevez des suggestions sur mesure.
+        - generic [ref=e24]:
+          - generic [ref=e25]:
+            - generic [ref=e26]: Nom complet
+            - textbox "Nom complet" [ref=e27]:
+              - /placeholder: Votre nom
+          - generic [ref=e28]:
+            - generic [ref=e29]: Adresse e-mail
+            - textbox "Adresse e-mail" [ref=e30]:
+              - /placeholder: exemple@esprit.tn
+          - generic [ref=e31]:
+            - generic [ref=e32]: Mot de passe
+            - textbox "Mot de passe" [ref=e33]:
+              - /placeholder: ••••••••
+            - paragraph [ref=e34]: 6 à 10 caractères, avec une majuscule, un chiffre et un caractère spécial.
+          - alert [ref=e35]: Le mot de passe doit contenir entre 6 et 10 caractères, inclure au moins une majuscule, un chiffre et un caractère spécial.
+          - button "S’inscrire" [ref=e36]
+        - paragraph [ref=e37]:
+          - text: Déjà inscrit ?
+          - link "Se connecter" [ref=e38] [cursor=pointer]:
+            - /url: /login
+      - paragraph [ref=e39]:
+        - link "‹ Retour à l’accueil" [ref=e40] [cursor=pointer]:
+          - /url: /
+  - button "Ouvrir CineBot, l'assistant cinéma" [ref=e42]:
+    - generic [ref=e43]: 🎬
+    - generic [ref=e44]: Demander à CineBot
+  - alert [ref=e45]
+```

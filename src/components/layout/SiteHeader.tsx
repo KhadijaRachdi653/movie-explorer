@@ -54,7 +54,17 @@ export default function SiteHeader() {
   if (OWN_HEADER.some((r) => r.test(pathname))) return null;
 
   const overlay = OVERLAY.some((r) => r.test(pathname));
-  const links = session.isAdmin ? [...LINKS, { href: "/admin/movies", label: "Admin" }] : LINKS;
+  // Abonnement (Module 2, Baha) pour les utilisateurs connectés ; liens d'administration pour les admins
+  const links = [
+    ...LINKS,
+    ...(session.status === "user" ? [{ href: "/subscriptions", label: "Abonnement" }] : []),
+    ...(session.isAdmin
+      ? [
+          { href: "/admin/movies", label: "Admin films" },
+          { href: "/admin/subscriptions", label: "Admin abonnements" },
+        ]
+      : []),
+  ];
   const isActive = (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
   const solid = !overlay || scrolled || menuOpen;
 

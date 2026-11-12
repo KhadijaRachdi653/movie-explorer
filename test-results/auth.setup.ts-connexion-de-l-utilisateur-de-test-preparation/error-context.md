@@ -1,0 +1,63 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - link "Movie Explorer" [ref=e4] [cursor=pointer]:
+        - /url: /
+      - navigation "Navigation principale" [ref=e5]:
+        - link "Accueil" [ref=e6] [cursor=pointer]:
+          - /url: /
+        - link "Films" [ref=e7] [cursor=pointer]:
+          - /url: /movies
+        - link "Découvrir" [ref=e8] [cursor=pointer]:
+          - /url: /discover
+        - link "Pour vous" [ref=e9] [cursor=pointer]:
+          - /url: /recommendations
+        - link "Mes listes" [ref=e10] [cursor=pointer]:
+          - /url: /lists
+        - link "Ma collection" [ref=e11] [cursor=pointer]:
+          - /url: /collection
+      - generic [ref=e12]:
+        - link "Inscription" [ref=e13] [cursor=pointer]:
+          - /url: /register
+        - link "Se connecter" [ref=e14] [cursor=pointer]:
+          - /url: /login
+  - generic [ref=e15]:
+    - generic [ref=e19]:
+      - paragraph [ref=e20]: Vos films, vos listes, vos avis.
+      - paragraph [ref=e21]: Un seul compte pour tout retrouver sur Movie Explorer.
+    - generic [ref=e23]:
+      - generic [ref=e24]:
+        - heading "Bon retour parmi nous" [level=1] [ref=e25]
+        - paragraph [ref=e26]: Connectez-vous pour retrouver vos listes et vos recommandations.
+        - generic [ref=e27]:
+          - generic [ref=e28]:
+            - generic [ref=e29]: Adresse e-mail
+            - textbox "Adresse e-mail" [ref=e30]:
+              - /placeholder: exemple@esprit.tn
+          - generic [ref=e31]:
+            - generic [ref=e32]:
+              - generic [ref=e33]: Mot de passe
+              - link "Mot de passe oublié ?" [ref=e34] [cursor=pointer]:
+                - /url: /forgot-password
+            - textbox "Mot de passe" [ref=e35]:
+              - /placeholder: ••••••••
+          - alert [ref=e36]:
+            - generic [ref=e37]: Ce compte n'existe pas dans la base. Souhaitez-vous créer un compte ?
+            - link "Créer un compte maintenant" [ref=e38] [cursor=pointer]:
+              - /url: /register
+          - button "Se connecter" [ref=e39]
+        - paragraph [ref=e40]:
+          - text: Nouveau sur Movie Explorer ?
+          - link "Créer un compte" [ref=e41] [cursor=pointer]:
+            - /url: /register
+      - paragraph [ref=e42]:
+        - link "‹ Retour à l’accueil" [ref=e43] [cursor=pointer]:
+          - /url: /
+  - button "Ouvrir CineBot, l'assistant cinéma" [ref=e45]:
+    - generic [ref=e46]: 🎬
+    - generic [ref=e47]: Demander à CineBot
+  - alert [ref=e48]
+```

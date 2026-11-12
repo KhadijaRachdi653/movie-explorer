@@ -40,6 +40,12 @@ Base : `feature/zina-reviews-and-cinebot`. **Aucune logique modifiée** : action
 ## Module 4 (Amine) intégré
 Voir `INTEGRATION-MODULE4.md` : module adapté au catalogue, page restylée, boutons « Favori » et « Suivi » sur la fiche film, lien « Ma collection » dans l'en-tête et dans le profil.
 
+## Abonnements (Baha) intégrés
+Source : `feature/baha-subscriptions` (commits `02ebe81` et `edcc3b4`). Les 22 fichiers du module sont repris **tels quels** (pages `/subscriptions` et `/admin/subscriptions`, API, modèle, service, composants, `scripts/seed-subscriptions.mjs`, `MODULE2.md`). Ils prennent le thème automatiquement. Les liens qu'il avait ajoutés sur l'ancien accueil sont dans l'en-tête commun (« Abonnement », et pour les administrateurs « Admin films » / « Admin abonnements ») et dans le profil (« Mon abonnement »).
+Le reste de son dernier commit (`edcc3b4`) ne change que les fins de ligne des autres fichiers : non repris.
+
+Présentation de la page `/subscriptions` refaite (logique identique : souscription, changement d'offre, résiliation, historique) : bannière avec affiches, « carte de membre » aux couleurs de l'offre, cartes d'offre à en-tête coloré, tableau « Comparer les offres » (`PlanGrid.tsx`, `CurrentSubscriptionCard.tsx`, `src/app/subscriptions/page.tsx`, nouveau `tiers.ts`).
+
 ## Correctif : service worker
 `public/sw.js` ligne 104 : `vibrate:,` (erreur de syntaxe) → `vibrate: [100, 50, 100],`. Le navigateur refusait tout le service worker : plus de mode hors ligne. **Erreur présente aussi sur `feature/zina-reviews-and-cinebot`.**
 

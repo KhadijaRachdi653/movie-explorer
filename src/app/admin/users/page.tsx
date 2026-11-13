@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { toggleUserBan, toggleUserRole } from "@/actions/userActions";
 import Link from "next/link";
 import PushRegisterButton from "@/components/admin/PushRegisterButton";
+import AdminUserActions from "@/components/admin/AdminUserActions";
 
 export const metadata = {
   title: "Administration | CINEA",
@@ -103,7 +104,7 @@ export default async function AdminUsersPage() {
                   </td>
 
                   {/* Colonne Actions de modération */}
-                  <td className="p-5 flex justify-center gap-4">
+                  <td className="p-5 flex flex-wrap justify-center gap-2">
                     <form action={async () => { "use server"; await toggleUserBan(u.id); }}>
                       <button
                         type="submit"
@@ -122,6 +123,8 @@ export default async function AdminUsersPage() {
                         {u.role === "admin" ? "Rétrograder" : "Nommer Admin 🛡️"}
                       </button>
                     </form>
+
+                    <AdminUserActions user={u} isSelf={isSelf} />
                   </td>
 
                   {/* Discret chevron navigable Figma */}

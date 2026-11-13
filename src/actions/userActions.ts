@@ -217,3 +217,66 @@ export async function toggleUserRole(userId: string): Promise<void> {
     console.error("Erreur action admin rôle :", err);
   }
 }
+
+// 🛠️ CRUD ADMINISTRATEUR : MODIFIER UN COMPTE (nom, e-mail, rôle, validation)
+export async function adminUpdateUser(
+  userId: string,
+  prevState: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  try {
+    await checkAdmin();
+    const currentAdmin = await auth();
+    const isSelf = currentAdmin?.user?.id === userId;
+
+    const name = ((formData.get("name") as string) ?? "").trim();
+    const email = ((formData.get("email") as string) ?? "").trim().toLowerCase();
+    const role = formData.get("role") === "admin" ? "admin" : "user";
+    const valide = formData.get("valide") === "on";
+
+    if (name.length < 3) return { error: "Le nom doit faire au moins 3 caractères." };
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { error: "Adresse e-mail invalide." };
+
+    await connectToDatabase();
+    const target = await User.findById(userId);
+    if (!target) return { error: "Utilisateur introuvable." };
+
+    // Un administrateur ne peut ni se rétrograder ni bloquer son propre compte
+    if (isSelf && (role !== "admin" || !valide)) {
+      return { error: "Vous ne pouvez pas retirer votre propre rôle admin ni bloquer votre compte." };
+    }
+
+    const emailTaken = await User.exists({ email, _id: { $ne: userId } });
+    if (emailTaken) return { error: "Cette adresse e-mail est déjà utilisée par un autre compte." };
+
+    await User.findByIdAndUpdate(userId, { $set: { name, email, role, valide } }, { runValidators: true });
+
+    revalidatePath("/admin/users");
+    revalidatePath(`/admin/users/${userId}`);
+    return { success: "Compte mis à jour." };
+  } catch (err) {
+    console.error("Erreur action admin modification :", err);
+    return { error: err instanceof Error ? err.message : "Erreur lors de la modification du compte." };
+  }
+}
+
+// 🛠️ CRUD ADMINISTRATEUR : SUPPRIMER UN COMPTE (même effet que « Supprimer mon compte » du profil)
+export async function adminDeleteUser(userId: string): Promise<ActionState> {
+  try {
+    await checkAdmin();
+    const currentAdmin = await auth();
+    if (currentAdmin?.user?.id === userId) {
+      return { error: "Vous ne pouvez pas supprimer votre propre compte depuis l'administration." };
+    }
+
+    await connectToDatabase();
+    const deleted = await User.findByIdAndDelete(userId);
+    if (!deleted) return { error: "Utilisateur introuvable." };
+
+    revalidatePath("/admin/users");
+    return { success: "Compte supprimé." };
+  } catch (err) {
+    console.error("Erreur action admin suppression :", err);
+    return { error: err instanceof Error ? err.message : "Erreur lors de la suppression du compte." };
+  }
+}

@@ -3,6 +3,7 @@ import User from "@/models/User";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import AdminUserActions from "@/components/admin/AdminUserActions";
 
 export const metadata = {
   title: "Fiche Utilisateur | CINEA",
@@ -64,6 +65,19 @@ export default async function UserDetailPage({
               {targetUser.name as string}
             </h1>
             <p className="text-xs text-[var(--text-muted)] font-medium">Identifiant Système : {userId}</p>
+          </div>
+          <div className="ml-auto flex flex-wrap gap-2">
+            <AdminUserActions
+              user={{
+                id: userId,
+                name: String(targetUser.name || "Cinéphile"),
+                email: String(targetUser.email || ""),
+                role: String(targetUser.role || "user"),
+                valide: Boolean(targetUser.valide),
+              }}
+              isSelf={currentAdmin._id.toString() === userId}
+              redirectAfterDelete="/admin/users"
+            />
           </div>
         </div>
 

@@ -3,7 +3,7 @@ import dbConnect from "@/lib/mongodb";
 import CustomList, { type CustomListDoc } from "./customList.model";
 import { getList } from "./customList.service";
 import { getCatalogMap, getCatalogMovies, MIN_COMMUNITY_VOTES, type CatalogMovie } from "./catalogue";
-import { buildSignals, rankCandidates, similarTo, toRecommendedMovie, type CandidateGroup, type SignalMovie } from "./ranking";
+import { buildSignals, rankBySpectators, rankCandidates, similarTo, toRecommendedMovie, type CandidateGroup, type SignalMovie } from "./ranking";
 import type { RecommendationSources, RecommendationsResponse } from "./types";
 import { ApiError } from "./errors";
 
@@ -134,11 +134,17 @@ export async function getTrending(limit: number): Promise<RecommendationsRespons
 }
 
 function trending(catalogue: CatalogMovie[], limit: number, exclude = new Set<string>()): RecommendationsResponse {
-  const results = catalogue
-    .filter((m) => !exclude.has(m.movieId))
-    .sort((a, b) => b.rating - a.rating || b.communityVotes - a.communityVotes)
+  // Classement par les notes des spectateurs (Module 3), complété par la note du catalogue (Module 2)
+  const results = rankBySpectators(catalogue.filter((m) => !exclude.has(m.movieId)), MIN_COMMUNITY_VOTES)
     .slice(0, limit)
-    .map((m) => toRecommendedMovie(m, m.communityVotes >= MIN_COMMUNITY_VOTES ? "Plébiscité par les spectateurs" : "Parmi les mieux notés"));
+    .map(({ movie: m, score }) =>
+      toRecommendedMovie(
+        m,
+        score !== null
+          ? `Noté ${(m.communityAverage as number).toFixed(1).replace(".", ",")}/5 par ${m.communityVotes} membre${m.communityVotes > 1 ? "s" : ""}`
+          : "Parmi les mieux notés du catalogue"
+      )
+    );
   return { source: "trending", results };
 }
 

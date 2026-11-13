@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildSignals, rankCandidates, SEED_COUNT, similarTo, toMatchPercent, type CandidateGroup } from "@/modules/recommendations/ranking";
+import { buildSignals, rankBySpectators, rankCandidates, SEED_COUNT, similarTo, toMatchPercent, type CandidateGroup } from "@/modules/recommendations/ranking";
 import type { CatalogMovie } from "@/modules/recommendations/catalogue";
 
 const movie = (id: string, genres: string[] = [], rating = 5, director = ""): CatalogMovie => ({
@@ -133,5 +133,25 @@ describe("signaux des autres modules", () => {
     const s = buildSignals([{ movieId: "a", title: "A", genres: [], director: "", addedAt: "2026-01-01" }], ["vu1"]);
     expect(s.excludeIds.has("vu1")).toBe(true);
     expect(s.seeds.map((x) => x.movieId)).toEqual(["a"]);
+  });
+});
+
+describe("rankBySpectators (Top des spectateurs, Module 3)", () => {
+  const m = (movieId: string, rating: number, communityVotes: number, communityAverage: number | null) => ({ movieId, rating, communityVotes, communityAverage });
+
+  it("les films notés par les spectateurs passent avant ceux qui n'ont que la note du catalogue", () => {
+    const ranked = rankBySpectators([m("catalogue-9.5", 9.5, 0, null), m("vote-4", 8, 5, 4)]);
+    expect(ranked.map((r) => r.movie.movieId)).toEqual(["vote-4", "catalogue-9.5"]);
+    expect(ranked[1].score).toBeNull();
+  });
+
+  it("un seul 5/5 ne passe pas devant un 4,6/5 donné par vingt spectateurs (moyenne pondérée)", () => {
+    const ranked = rankBySpectators([m("un-vote", 0, 1, 5), m("vingt-votes", 0, 20, 4.6), m("moyen", 0, 10, 3)]);
+    expect(ranked[0].movie.movieId).toBe("vingt-votes");
+  });
+
+  it("sans aucun vote, le classement suit la note du catalogue", () => {
+    const ranked = rankBySpectators([m("a", 7, 0, null), m("b", 9, 0, null)]);
+    expect(ranked.map((r) => r.movie.movieId)).toEqual(["b", "a"]);
   });
 });

@@ -5,13 +5,16 @@ import { useStreaming } from "./context";
 import type { CardMovie } from "./movie";
 
 // « Top 10 » : un vrai classement, d'où les grands numéros à côté des affiches
-export default function Top10Row({ title, movies }: { title: string; movies: CardMovie[] }) {
+export default function Top10Row({ title, subtitle, movies }: { title: string; subtitle?: string; movies: CardMovie[] }) {
   const { openMovie, openAddToList } = useStreaming();
   if (movies.length === 0) return null;
 
   return (
     <section aria-label={title}>
-      <h2 className="mb-3 px-4 text-lg font-bold sm:px-8 sm:text-xl">{title}</h2>
+      <div className="mb-3 px-4 sm:px-8">
+        <h2 className="text-lg font-bold sm:text-xl">{title}</h2>
+        {subtitle && <p className="mt-0.5 text-sm text-[var(--mist)]">{subtitle}</p>}
+      </div>
       <ol className="row-scroller flex scroll-px-4 gap-4 overflow-x-auto px-4 pb-2 sm:scroll-px-8 sm:px-8">
         {movies.slice(0, 10).map((m, i) => (
           <li key={m.movieId} className="group relative flex shrink-0 items-end">

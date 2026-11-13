@@ -127,3 +127,31 @@ export function toRecommendedMovie(m: CatalogMovie, reason: string | null, match
     match,
   };
 }
+
+
+/**
+ * « Top des spectateurs » : classement par les notes des utilisateurs (Module 3), pas par la note du catalogue.
+ * Moyenne pondérée (bayésienne) : score = (v × R + m × C) / (v + m)
+ *   R = moyenne du film, v = nombre de votes, C = moyenne de tous les votes, m = votes minimum de confiance.
+ * Un film noté 5/5 une seule fois ne passe donc pas devant un film noté 4,6/5 par vingt spectateurs.
+ * Les films sans vote complètent ensuite la liste, classés par la note du catalogue.
+ */
+export function rankBySpectators<T extends { movieId: string; rating: number; communityVotes: number; communityAverage?: number | null }>(
+  movies: T[],
+  minVotes = 3
+): { movie: T; score: number | null }[] {
+  const voted = movies.filter((m) => m.communityVotes > 0 && m.communityAverage != null);
+  const totalVotes = voted.reduce((n, m) => n + m.communityVotes, 0);
+  const globalMean = totalVotes > 0 ? voted.reduce((n, m) => n + (m.communityAverage as number) * m.communityVotes, 0) / totalVotes : 0;
+  const scored = voted
+    .map((movie) => {
+      const v = movie.communityVotes;
+      return { movie, score: (v * (movie.communityAverage as number) + minVotes * globalMean) / (v + minVotes) };
+    })
+    .sort((a, b) => b.score - a.score || b.movie.communityVotes - a.movie.communityVotes);
+  const rest = movies
+    .filter((m) => !(m.communityVotes > 0 && m.communityAverage != null))
+    .sort((a, b) => b.rating - a.rating)
+    .map((movie) => ({ movie, score: null }));
+  return [...scored, ...rest];
+}

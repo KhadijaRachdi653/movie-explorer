@@ -97,7 +97,15 @@ export default function RecommendationsView() {
         {personal.loading ? (
           <MovieRow title="Chargement des recommandations" movies={[]} loading />
         ) : (
-          <Top10Row title={isPersonal ? "Top 10 pour vous" : "Top 10 des spectateurs"} movies={top10} />
+          <Top10Row
+            title={isPersonal ? "Top 10 pour vous" : "Les coups de cœur de la communauté"}
+            subtitle={
+              isPersonal
+                ? "Calculé à partir de vos listes, favoris, notes et recherches."
+                : "Classés selon les notes laissées par les membres de Movie Explorer."
+            }
+            movies={top10}
+          />
         )}
         {genreRows.map((r) => (
           <MovieRow key={r.genre} title={genreRow(r.genre)} movies={r.movies} />

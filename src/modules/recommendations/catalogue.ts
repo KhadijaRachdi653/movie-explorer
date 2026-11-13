@@ -18,6 +18,7 @@ export interface CatalogMovie {
   director: string;
   rating: number; // sur 10 : moyenne des spectateurs (/5 × 2) si assez de votes, sinon note du catalogue
   communityVotes: number;
+  communityAverage?: number | null; // moyenne des notes des spectateurs (Module 3), sur 5 ; null sans vote
 }
 
 interface MovieRow {
@@ -52,6 +53,7 @@ export async function getCatalogMovies(ids?: string[]): Promise<CatalogMovie[]> 
       director: d.director ?? "",
       rating: votes >= MIN_COMMUNITY_VOTES ? community[movieId].average * 2 : (d.rating ?? 0),
       communityVotes: votes,
+      communityAverage: votes > 0 ? community[movieId].average : null,
     };
   });
 }
